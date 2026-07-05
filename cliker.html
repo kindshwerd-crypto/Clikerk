@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Кликер · перерождения</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background: #0e121c;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            color: #eef2f7;
+        }
+
+        .game-wrapper {
+            width: 100%;
+            max-width: 720px;
+            background: #1a1f2e;
+            border-radius: 36px;
+            padding: 24px 20px 32px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            border: 1px solid #2c3346;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 24px;
+            background: #0e121c;
+            border-radius: 60px;
+            padding: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #7b87a3;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 10px 0;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.25s;
+        }
+
+        .tab-btn.active {
+            background: #2f3b57;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: #bcc6de;
+        }
+
+        .panel {
+            display: none;
+            animation: fadeUp 0.3s ease;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(12px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Кликер */
+        .clicker-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .score-box {
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        .score-box .score {
+            font-size: 3.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #f7e05e, #f9b83a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+        }
+
+        .score-box .per-click {
+            font-size: 1rem;
+            color: #8b99b8;
+            margin-top: -4px;
+        }
+
+        .click-btn {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #3b4b70, #1b253b);
+            border: 3px solid #4f618a;
+            cursor: pointer;
+            transition: 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            font-weight: 700;
+            color: #fff;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), inset 0 -6px 0 #0a0e18;
+            position: relative;
+            touch-action: manipulation;
+        }
+
+        .click-btn:active {
+            transform: scale(0.94);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), inset 0 -2px 0 #0a0e18;
+        }
+
+        .click-btn .click-icon {
+            pointer-events: none;
+        }
+
+        .float-text {
+            position: fixed;
+            pointer-events: none;
+            font-weight: 800;
+            font-size: 2rem;
+            color: #ffd966;
+            text-shadow: 0 0 12px #f0b34b, 0 2px 4px #000;
+            animation: floatUp 1s forwards;
+            z-index: 999;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(0.8); }
+            100% { opacity: 0; transform: translateY(-120px) scale(1.2); }
+        }
+
+        /* Улучшения */
+        .upgrade-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 12px 0 20px;
+        }
+
+        .upgrade-item {
+            background: #242c3e;
+            border-radius: 16px;
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #2f3b57;
+            transition: 0.2s;
+        }
+
+        .upgrade-item .info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .upgrade-item .info .name {
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+
+        .upgrade-item .info .desc {
+            font-size: 0.8rem;
+            color: #8b99b8;
+        }
+
+        .upgrade-item .info .level {
+            font-size: 0.75rem;
+            color: #b0bdd9;
+            margin-top: 2px;
+        }
+
+        .upgrade-item .buy-btn {
+            background: #3b4b70;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+            min-width: 80px;
+        }
+
+        .upgrade-item .buy-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .upgrade-item .buy-btn:not(:disabled):hover {
+            background: #4f618a;
+            transform: scale(1.02);
+        }
+
+        /* Перерождение */
+        .rebirth-section {
+            background: #1f273b;
+            border-radius: 16px;
+            padding: 18px;
+            margin-top: 12px;
+            border: 1px solid #3b4b70;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .rebirth-section .info .title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .rebirth-section .info .detail {
+            font-size: 0.85rem;
+            color: #8b99b8;
+        }
+
+        .rebirth-btn {
+            background: #c97b3a;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 40px;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .rebirth-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .rebirth-btn:not(:disabled):hover {
+            background: #e08f4b;
+            transform: scale(1.03);
+        }
+
+        /* Топ */
+        .top-list {
+            margin-top: 12px;
+        }
+
+        .top-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: #1f273b;
+            border-radius: 12px;
+            margin-bottom: 6px;
+            border-left: 4px solid #4f618a;
+        }
+
+        .top-item .rank {
+            font-weight: 700;
+            color: #7b87a3;
+            width: 30px;
+        }
+
+        .top-item .name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .top-item .stats {
+            color: #b0bdd9;
+            font-size: 0.85rem;
+        }
+
+        .reset-top-btn {
+            background: transparent;
+            border: 1px solid #3b4b70;
+            color: #8b99b8;
+            padding: 6px 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-top: 16px;
+            transition: 0.2s;
+        }
+
+        .reset-top-btn:hover {
+            background: #2f3b57;
+            color: #fff;
+        }
+
+        @media (max-width: 500px) {
+            .click-btn {
+                width: 160px;
+                height: 160px;
+                font-size: 3rem;
+            }
+            .score-box .score {
+                font-size: 2.4rem;
+            }
+            .game-wrapper {
+                padding: 16px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-wrapper">
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="clicker">🖱️ Кликер</button>
+        <button class="tab-btn" data-tab="upgrades">⬆️ Улучшения</button>
+        <button class="tab-btn" data-tab="top">🏆 Топ</button>
+    </div>
+
+    <!-- Панель кликера -->
+    <div class="panel active" id="panel-clicker">
+        <div class="clicker-area">
+            <div class="score-box">
+                <div class="score" id="scoreDisplay">0</div>
+                <div class="per-click">За клик: <span id="perClickDisplay">1</span></div>
+            </div>
+            <button class="click-btn" id="clickBtn">
+                <span class="click-icon">⚡</span>
+            </button>
+            <div style="font-size:0.85rem; color:#6a7b94; margin-top:4px;">
+                Перерождений: <span id="rebirthCountDisplay">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Панель улучшений -->
+    <div class="panel" id="panel-upgrades">
+        <div class="upgrade-list" id="upgradeList"></div>
+        <div class="rebirth-section">
+            <div class="info">
+                <div class="title">🌀 Перерождение</div>
+                <div class="detail">Требуется: <span id="rebirthCostDisplay">1000</span> очков</div>
+                <div class="detail">Бонус: +<span id="rebirthBonusDisplay">0</span> к клику</div>
+            </div>
+            <button class="rebirth-btn" id="rebirthBtn">Переродиться</button>
+        </div>
+    </div>
+
+    <!-- Панель топа -->
+    <div class="panel" id="panel-top">
+        <div class="top-list" id="topList"></div>
+        <button class="reset-top-btn" id="resetTopBtn">Сбросить топ</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        'use strict';
+
+        // ========== СОСТОЯНИЕ ==========
+        const DEFAULT_STATE = {
+            score: 0,
+            rebirths: 0,
+            rebirthBonus: 0, // постоянный бонус от перерождений
+            upgrades: [
+                { id: 'click_power', name: '💪 Сила клика', baseCost: 10, costMult: 1.5, level: 0, maxLevel: 20, desc: '+1 за клик' },
+                { id: 'auto_click', name: '🤖 Автокликер', baseCost: 50, costMult: 1.6, level: 0, maxLevel: 15, desc: '+1 в секунду' },
+            ],
+            top: [], // массив { name, score, rebirths }
+        };
+
+        let state = loadState();
+        let autoInterval = null;
+        let clickPowerBonus = 0; // вычисляется из уровня улучшения
+        let autoClickBonus = 0;
+
+        // ========== ЗАГРУЗКА / СОХРАНЕНИЕ ==========
+        function loadState() {
+            const saved = localStorage.getItem('clickerGame');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    // слияние с дефолтом для новых полей
+                    const defaultUpgrades = DEFAULT_STATE.upgrades.map(u => ({ ...u }));
+                    const mergedUpgrades = defaultUpgrades.map(def => {
+                        const savedUp = parsed.upgrades.find(u => u.id === def.id);
+                        return savedUp ? { ...def, ...savedUp } : def;
+                    });
+                    return {
+                        score: parsed.score || 0,
+                        rebirths: parsed.rebirths || 0,
+                        rebirthBonus: parsed.rebirthBonus || 0,
+                        upgrades: mergedUpgrades,
+                        top: parsed.top || [],
+                    };
+                } catch (e) { /* сброс */ }
+            }
+            return JSON.parse(JSON.stringify(DEFAULT_STATE));
+        }
+
+        function saveState() {
+            localStorage.setItem('clickerGame', JSON.stringify(state));
+        }
+
+        // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+        function getUpgradeCost(upgrade) {
+            return Math.floor(upgrade.baseCost * Math.pow(upgrade.costMult, upgrade.level));
+        }
+
+        function getClickPower() {
+            const up = state.upgrades.find(u => u.id === 'click_power');
+            return (up ? up.level : 0) + state.rebirthBonus;
+        }
+
+        function getAutoClick() {
+            const up = state.upgrades.find(u => u.id === 'auto_click');
+            return up ? up.level : 0;
+        }
+
+        function getRebirthCost() {
+            return 1000 * (state.rebirths + 1);
+        }
+
+        // ========== ОБНОВЛЕНИЕ UI ==========
+        function updateUI() {
+            // Счёт
+            document.getElementById('scoreDisplay').textContent = state.score;
+            document.getElementById('perClickDisplay').textContent = getClickPower() + 1;
+            document.getElementById('rebirthCountDisplay').textContent = state.rebirths;
+
+            // Бонус перерождения
+            document.getElementById('rebirthBonusDisplay').textContent = state.rebirthBonus;
+            document.getElementById('rebirthCostDisplay').textContent = getRebirthCost();
+
+            // Кнопка перерождения
+            const rebirthBtn = document.getElementById('rebirthBtn');
+            if (state.score >= getRebirthCost()) {
+                rebirthBtn.disabled = false;
+            } else {
+                rebirthBtn.disabled = true;
+            }
+
+            // Улучшения
+            renderUpgrades();
+
+            // Топ
+            renderTop();
+
+            // Автокликер
+            if (autoInterval) clearInterval(autoInterval);
+            const autoAmount = getAutoClick();
+            if (autoAmount > 0) {
+                autoInterval = setInterval(() => {
+                    state.score += autoAmount;
+                    saveState();
+                    updateUI();
+                }, 1000);
+            }
+        }
+
+        // ========== УЛУЧШЕНИЯ ==========
+        function renderUpgrades() {
+            const container = document.getElementById('upgradeList');
+            container.innerHTML = '';
+            state.upgrades.forEach((up, index) => {
+                const cost = getUpgradeCost(up);
+                const canBuy = state.score >= cost && up.level < up.maxLevel;
+                const div = document.createElement('div');
+                div.className = 'upgrade-item';
+                div.innerHTML = `
+                    <div class="info">
+                        <div class="name">${up.name}</div>
+                        <div class="desc">${up.desc}</div>
+                        <div class="level">Уровень ${up.level} / ${up.maxLevel}</div>
+                    </div>
+                    <button class="buy-btn" data-index="${index}" ${canBuy ? '' : 'disabled'}>
+                        ${up.level >= up.maxLevel ? 'MAX' : `${cost} 🔹`}
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+
+            // Обработчики кнопок покупки
+            document.querySelectorAll('.buy-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.dataset.index, 10);
+                    const up = state.upgrades[index];
+                    const cost = getUpgradeCost(up);
+                    if (state.score >= cost && up.level < up.maxLevel) {
+                        state.score -= cost;
+                        up.level += 1;
+                        saveState();
+                        updateUI();
+                        // Визуальный фидбек
+                        this.textContent = up.level >= up.maxLevel ? 'MAX' : `${getUpgradeCost(up)} 🔹`;
+                        if (up.level >= up.maxLevel) this.disabled = true;
+                    }
+                });
+            });
+        }
+
+        // ========== ПЕРЕРОЖДЕНИЕ ==========
+        function performRebirth() {
+            const cost = getRebirthCost();
+            if (state.score < cost) return;
+
+            // Запись в топ (если очков больше, чем минимальное в топе или топ меньше 10)
+            const entry = {
+                name: 'Игрок',
+                score: state.score,
+                rebirths: state.rebirths + 1,
+                date: new Date().toLocaleDateString()
+            };
+            state.top.push(entry);
+            state.top.sort((a, b) => b.score - a.score);
+            if (state.top.length > 10) state.top = state.top.slice(0, 10);
+
+            // Перерождение
+            state.rebirths += 1;
+            state.rebirthBonus += 1; // +1 к клику за каждое перерождение
+            state.score = 0;
+
+            saveState();
+            updateUI();
+        }
+
+        // ========== ТОП ==========
+        function renderTop() {
+            const container = document.getElementById('topList');
+            container.innerHTML = '';
+            if (state.top.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#6a7b94; padding:20px;">Пока нет записей. Совершите перерождение!</div>';
+                return;
+            }
+            state.top.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = 'top-item';
+                div.innerHTML = `
+                    <span class="rank">#${idx + 1}</span>
+                    <span class="name">${item.name}</span>
+                    <span class="stats">${item.score} очков · ${item.rebirths} перер.</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // ========== ВКЛАДКИ ==========
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const tab = this.dataset.tab;
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                document.getElementById('panel-' + tab).classList.add('active');
+            });
+        });
+
+        // ========== КЛИК ==========
+        document.getElementById('clickBtn').addEventListener('click', function(e) {
+            const power = getClickPower() + 1; // базовый 1 + бонусы
+            state.score += power;
+            saveState();
+            updateUI();
+
+            // Анимация +N
+            const rect = this.getBoundingClientRect();
+            const x = rect.left + rect.width / 2 + (Math.random() - 0.5) * 60;
+            const y = rect.top + (Math.random() - 0.5) * 40;
+            const float = document.createElement('div');
+            float.className = 'float-text';
+            float.textContent = `+${power}`;
+            float.style.left = x + 'px';
+            float.style.top = y + 'px';
+            document.body.appendChild(float);
+            setTimeout(() => float.remove(), 1000);
+        });
+
+        // ========== ПЕРЕРОЖДЕНИЕ (кнопка) ==========
+        document.getElementById('rebirthBtn').addEventListener('click', performRebirth);
+
+        // ========== СБРОС ТОПА ==========
+        document.getElementById('resetTopBtn').addEventListener('click', function() {
+            if (confirm('Удалить все записи топа?')) {
+                state.top = [];
+                saveState();
+                updateUI();
+            }
+        });
+
+        // ========== ЗАПУСК ==========
+        updateUI();
+
+        // Сохранять состояние при выходе
+        window.addEventListener('beforeunload', saveState);
+    })();
+</script>
+</body>
+</html>
