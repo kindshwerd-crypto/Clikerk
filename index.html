@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Космический цветок</title>
+    <style>
+        /* ===== ГЛОБАЛЬНЫЙ ФОН ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0b0e1a 0%, #1a1040 50%, #2d1b69 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            color: #eef2f7;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ===== АНИМИРОВАННЫЕ ЗВЁЗДЫ (фон) ===== */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            background: transparent;
+            overflow: hidden;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle var(--duration) ease-in-out infinite alternate;
+            opacity: 0.4;
+            width: var(--size);
+            height: var(--size);
+            left: var(--left);
+            top: var(--top);
+            animation-delay: var(--delay);
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.2; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* ===== ОСНОВНОЙ КОНТЕЙНЕР ===== */
+        .game-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 720px;
+            background: rgba(20, 25, 50, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 36px;
+            padding: 20px 18px 28px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* ===== ШАПКА С НИКОМ ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .header .nick-input {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 40px;
+            padding: 6px 16px;
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+            flex: 1;
+            min-width: 120px;
+            transition: 0.2s;
+        }
+
+        .header .nick-input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .header .nick-input:focus {
+            border-color: #a78bfa;
+            box-shadow: 0 0 12px rgba(167, 139, 250, 0.3);
+        }
+
+        .header .stats-mini {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            white-space: nowrap;
+        }
+
+        /* ===== ВКЛАДКИ ===== */
+        .tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 60px;
+            padding: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 8px 0;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.25s;
+        }
+
+        .tab-btn.active {
+            background: rgba(167, 139, 250, 0.3);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: #c4b5fd;
+        }
+
+        .panel {
+            display: none;
+            animation: fadeUp 0.3s ease;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(12px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== КЛИКЕР ===== */
+        .clicker-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .score-box {
+            text-align: center;
+        }
+
+        .score-box .score {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fcd34d, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+        }
+
+        .score-box .per-click {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: -4px;
+        }
+
+        /* ===== КНОПКА-ЦВЕТОК ===== */
+        .flower-btn {
+            width: 190px;
+            height: 190px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(167, 139, 250, 0.3), rgba(20, 25, 50, 0.8));
+            border: 3px solid rgba(167, 139, 250, 0.4);
+            cursor: pointer;
+            transition: 0.15s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 4.5rem;
+            line-height: 1;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), inset 0 -6px 0 rgba(0, 0, 0, 0.3);
+            position: relative;
+            touch-action: manipulation;
+            color: #fff;
+        }
+
+        .flower-btn:active {
+            transform: scale(0.94);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .flower-btn .stage-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 6px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 2px 14px;
+            border-radius: 30px;
+            color: #c4b5fd;
+            text-shadow: 0 1px 4px #000;
+        }
+
+        .flower-btn.bloom {
+            animation: bloomPulse 0.3s ease;
+        }
+
+        @keyframes bloomPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); filter: brightness(1.4); }
+            100% { transform: scale(1); }
+        }
+
+        .float-text {
+            position: fixed;
+            pointer-events: none;
+            font-weight: 800;
+            font-size: 2rem;
+            color: #fcd34d;
+            text-shadow: 0 0 20px #f59e0b, 0 2px 4px #000;
+            animation: floatUp 1s forwards;
+            z-index: 999;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(0.8); }
+            100% { opacity: 0; transform: translateY(-120px) scale(1.2); }
+        }
+
+        /* ===== УЛУЧШЕНИЯ (без изменений) ===== */
+        .upgrade-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 12px 0 18px;
+        }
+
+        .upgrade-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .upgrade-item .info .name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .upgrade-item .info .desc {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .upgrade-item .info .level {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .upgrade-item .buy-btn {
+            background: rgba(167, 139, 250, 0.25);
+            border: none;
+            padding: 6px 18px;
+            border-radius: 40px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.85rem;
+            min-width: 70px;
+        }
+
+        .upgrade-item .buy-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .upgrade-item .buy-btn:not(:disabled):hover {
+            background: rgba(167, 139, 250, 0.5);
+            transform: scale(1.02);
+        }
+
+        /* ===== ПЕРЕРОЖДЕНИЕ ===== */
+        .rebirth-section {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 14px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .rebirth-section .info .title {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .rebirth-section .info .detail {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .rebirth-btn {
+            background: #7c3aed;
+            border: none;
+            padding: 8px 24px;
+            border-radius: 40px;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .rebirth-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .rebirth-btn:not(:disabled):hover {
+            background: #8b5cf6;
+            transform: scale(1.03);
+        }
+
+        /* ===== ТОП ===== */
+        .top-list {
+            margin-top: 12px;
+        }
+
+        .top-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 10px;
+            margin-bottom: 4px;
+            border-left: 3px solid #7c3aed;
+        }
+
+        .top-item .rank {
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.3);
+            width: 30px;
+        }
+
+        .top-item .name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .top-item .stats {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.8rem;
+        }
+
+        .reset-top-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.3);
+            padding: 4px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            margin-top: 14px;
+            transition: 0.2s;
+        }
+
+        .reset-top-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        /* ===== АДАПТИВ ===== */
+        @media (max-width: 500px) {
+            .flower-btn {
+                width: 150px;
+                height: 150px;
+                font-size: 3.8rem;
+            }
+            .score-box .score {
+                font-size: 2.2rem;
+            }
+            .game-wrapper {
+                padding: 14px 12px;
+            }
+            .header .nick-input {
+                font-size: 0.8rem;
+                padding: 4px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== ЗВЁЗДЫ (фон) ===== -->
+    <div class="stars" id="starsContainer"></div>
+
+    <!-- ===== ОСНОВНОЙ КОНТЕЙНЕР ===== -->
+    <div class="game-wrapper">
+
+        <!-- ШАПКА С НИКОМ -->
+        <div class="header">
+            <input class="nick-input" id="nickInput" type="text" placeholder="Введите ник..." maxlength="20" />
+            <span class="stats-mini">🌱 <span id="rebirthCountDisplay">0</span> пер.</span>
+        </div>
+
+        <!-- ВКЛАДКИ -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="clicker">🌸 Цветок</button>
+            <button class="tab-btn" data-tab="upgrades">⬆️ Улучшения</button>
+            <button class="tab-btn" data-tab="top">🏆 Топ</button>
+        </div>
+
+        <!-- ПАНЕЛЬ КЛИКЕРА -->
+        <div class="panel active" id="panel-clicker">
+            <div class="clicker-area">
+                <div class="score-box">
+                    <div class="score" id="scoreDisplay">0</div>
+                    <div class="per-click">⚡ +<span id="perClickDisplay">1</span> за клик</div>
+                </div>
+                <button class="flower-btn" id="flowerBtn">
+                    <span class="click-icon" id="flowerEmoji">🌱</span>
+                    <span class="stage-label" id="stageLabel">Семечко</span>
+                </button>
+                <div style="font-size:0.75rem; color:rgba(255,255,255,0.3); margin-top:4px;">
+                    Автокликер: <span id="autoDisplay">0</span> / сек
+                </div>
+            </div>
+        </div>
+
+        <!-- ПАНЕЛЬ УЛУЧШЕНИЙ -->
+        <div class="panel" id="panel-upgrades">
+            <div class="upgrade-list" id="upgradeList"></div>
+            <div class="rebirth-section">
+                <div class="info">
+                    <div class="title">🌀 Перерождение</div>
+                    <div class="detail">Требуется: <span id="rebirthCostDisplay">1000</span> очков</div>
+                    <div class="detail">Бонус: +<span id="rebirthBonusDisplay">0</span> к клику</div>
+                </div>
+                <button class="rebirth-btn" id="rebirthBtn">Переродиться</button>
+            </div>
+        </div>
+
+        <!-- ПАНЕЛЬ ТОПА -->
+        <div class="panel" id="panel-top">
+            <div class="top-list" id="topList"></div>
+            <button class="reset-top-btn" id="resetTopBtn">Сбросить топ</button>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ========== ГЕНЕРАЦИЯ ЗВЁЗД ==========
+            (function createStars() {
+                const container = document.getElementById('starsContainer');
+                for (let i = 0; i < 120; i++) {
+                    const star = document.createElement('div');
+                    star.className = 'star';
+                    const size = Math.random() * 3 + 1;
+                    star.style.setProperty('--size', size + 'px');
+                    star.style.setProperty('--left', Math.random() * 100 + '%');
+                    star.style.setProperty('--top', Math.random() * 100 + '%');
+                    star.style.setProperty('--duration', (Math.random() * 3 + 2) + 's');
+                    star.style.setProperty('--delay', (Math.random() * 5) + 's');
+                    container.appendChild(star);
+                }
+            })();
+
+            // ========== СОСТОЯНИЕ ==========
+            const DEFAULT_STATE = {
+                score: 0,
+                rebirths: 0,
+                rebirthBonus: 0,
+                nick: 'Садовод',
+                upgrades: [
+                    { id: 'click_power', name: '💪 Сила роста', baseCost: 10, costMult: 1.5, level: 0, maxLevel: 25, desc: '+1 к силе клика' },
+                    { id: 'auto_click', name: '🤖 Фотосинтез', baseCost: 50, costMult: 1.6, level: 0, maxLevel: 20, desc: '+1 очко в секунду' },
+                ],
+                top: [],
+            };
+
+            let state = loadState();
+            let autoInterval = null;
+
+            // ========== СТАДИИ РАСТЕНИЙ (16 штук) ==========
+            const STAGES = [
+                { minScore: 0, emoji: '🌱', label: 'Семечко' },
+                { minScore: 5, emoji: '🌿', label: 'Росток' },
+                { minScore: 20, emoji: '☘️', label: 'Трилистник' },
+                { minScore: 50, emoji: '🌵', label: 'Кактус' },
+                { minScore: 150, emoji: '🌴', label: 'Пальма' },
+                { minScore: 400, emoji: '🌻', label: 'Подсолнух' },
+                { minScore: 1000, emoji: '🌺', label: 'Гибискус' },
+                { minScore: 2500, emoji: '🌸', label: 'Сакура' },
+                { minScore: 6000, emoji: '🌷', label: 'Тюльпан' },
+                { minScore: 15000, emoji: '🌹', label: 'Роза' },
+                { minScore: 40000, emoji: '🌳', label: 'Древо жизни' },
+                { minScore: 100000, emoji: '🏵️', label: 'Золотой цветок' },
+                { minScore: 250000, emoji: '🌟🌸', label: 'Звёздный лотос' },
+                { minScore: 600000, emoji: '💎🌺', label: 'Кристальный бутон' },
+                { minScore: 1500000, emoji: '✨🌀', label: 'Космический венок' },
+                { minScore: 5000000, emoji: '🌌🌼', label: 'Бесконечный сад' },
+            ];
+
+            function getStage(score) {
+                let result = STAGES[0];
+                for (let s of STAGES) {
+                    if (score >= s.minScore) result = s;
+                }
+                return result;
+            }
+
+            // ========== ЗАГРУЗКА / СОХРАНЕНИЕ ==========
+            function loadState() {
+                const saved = localStorage.getItem('cosmicFlower');
+                if (saved) {
+                    try {
+                        const parsed = JSON.parse(saved);
+                        const defaultUpgrades = DEFAULT_STATE.upgrades.map(u => ({ ...u }));
+                        const mergedUpgrades = defaultUpgrades.map(def => {
+                            const savedUp = parsed.upgrades.find(u => u.id === def.id);
+                            return savedUp ? { ...def, ...savedUp } : def;
+                        });
+                        return {
+                            score: parsed.score || 0,
+                            rebirths: parsed.rebirths || 0,
+                            rebirthBonus: parsed.rebirthBonus || 0,
+                            nick: parsed.nick || 'Садовод',
+                            upgrades: mergedUpgrades,
+                            top: parsed.top || [],
+                        };
+                    } catch (e) { /* сброс */ }
+                }
+                return JSON.parse(JSON.stringify(DEFAULT_STATE));
+            }
+
+            function saveState() {
+                localStorage.setItem('cosmicFlower', JSON.stringify(state));
+            }
+
+            // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+            function getUpgradeCost(upgrade) {
+                return Math.floor(upgrade.baseCost * Math.pow(upgrade.costMult, upgrade.level));
+            }
+
+            function getClickPower() {
+                const up = state.upgrades.find(u => u.id === 'click_power');
+                return (up ? up.level : 0) + state.rebirthBonus;
+            }
+
+            function getAutoClick() {
+                const up = state.upgrades.find(u => u.id === 'auto_click');
+                return up ? up.level : 0;
+            }
+
+            function getRebirthCost() {
+                return 1000 * (state.rebirths + 1);
+            }
+
+            // ========== ОБНОВЛЕНИЕ UI ==========
+            function updateUI() {
+                // Счёт
+                document.getElementById('scoreDisplay').textContent = state.score;
+                document.getElementById('perClickDisplay').textContent = getClickPower() + 1;
+                document.getElementById('rebirthCountDisplay').textContent = state.rebirths;
+                document.getElementById('autoDisplay').textContent = getAutoClick();
+
+                // Бонус перерождения
+                document.getElementById('rebirthBonusDisplay').textContent = state.rebirthBonus;
+                document.getElementById('rebirthCostDisplay').textContent = getRebirthCost();
+
+                // Кнопка перерождения
+                const rebirthBtn = document.getElementById('rebirthBtn');
+                rebirthBtn.disabled = (state.score < getRebirthCost());
+
+                // Обновление цветка
+                const stage = getStage(state.score);
+                document.getElementById('flowerEmoji').textContent = stage.emoji;
+                document.getElementById('stageLabel').textContent = stage.label;
+
+                // Ник в поле ввода
+                const nickInput = document.getElementById('nickInput');
+                if (nickInput.value !== state.nick) {
+                    nickInput.value = state.nick;
+                }
+
+                // Улучшения
+                renderUpgrades();
+
+                // Топ
+                renderTop();
+
+                // Автокликер
+                if (autoInterval) clearInterval(autoInterval);
+                const autoAmount = getAutoClick();
+                if (autoAmount > 0) {
+                    autoInterval = setInterval(() => {
+                        state.score += autoAmount;
+                        saveState();
+                        updateUI();
+                    }, 1000);
+                }
+            }
+
+            // ========== УЛУЧШЕНИЯ ==========
+            function renderUpgrades() {
+                const container = document.getElementById('upgradeList');
+                container.innerHTML = '';
+                state.upgrades.forEach((up, index) => {
+                    const cost = getUpgradeCost(up);
+                    const canBuy = state.score >= cost && up.level < up.maxLevel;
+                    const div = document.createElement('div');
+                    div.className = 'upgrade-item';
+                    div.innerHTML = `
+                        <div class="info">
+                            <div class="name">${up.name}</div>
+                            <div class="desc">${up.desc}</div>
+                            <div class="level">Ур. ${up.level} / ${up.maxLevel}</div>
+                        </div>
+                        <button class="buy-btn" data-index="${index}" ${canBuy ? '' : 'disabled'}>
+                            ${up.level >= up.maxLevel ? 'MAX' : `${cost} 🔹`}
+                        </button>
+                    `;
+                    container.appendChild(div);
+                });
+
+                document.querySelectorAll('.buy-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const index = parseInt(this.dataset.index, 10);
+                        const up = state.upgrades[index];
+                        const cost = getUpgradeCost(up);
+                        if (state.score >= cost && up.level < up.maxLevel) {
+                            state.score -= cost;
+                            up.level += 1;
+                            saveState();
+                            updateUI();
+                        }
+                    });
+                });
+            }
+
+            // ========== ПЕРЕРОЖДЕНИЕ ==========
+            function performRebirth() {
+                const cost = getRebirthCost();
+                if (state.score < cost) return;
+
+                // Запись в топ (с текущим ником)
+                const entry = {
+                    name: state.nick || 'Садовод',
+                    score: state.score,
+                    rebirths: state.rebirths + 1,
+                    date: new Date().toLocaleDateString()
+                };
+                state.top.push(entry);
+                state.top.sort((a, b) => b.score - a.score);
+                if (state.top.length > 10) state.top = state.top.slice(0, 10);
+
+                // Перерождение
+                state.rebirths += 1;
+                state.rebirthBonus += 1;
+                state.score = 0;
+
+                saveState();
+                updateUI();
+            }
+
+            // ========== ТОП ==========
+            function renderTop() {
+                const container = document.getElementById('topList');
+                container.innerHTML = '';
+                if (state.top.length === 0) {
+                    container.innerHTML = '<div style="text-align:center; color:rgba(255,255,255,0.2); padding:20px;">Пока нет записей. Совершите перерождение!</div>';
+                    return;
+                }
+                state.top.forEach((item, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'top-item';
+                    div.innerHTML = `
+                        <span class="rank">#${idx + 1}</span>
+                        <span class="name">${item.name}</span>
+                        <span class="stats">${item.score} очков · ${item.rebirths} пер.</span>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            // ========== ВКЛАДКИ ==========
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    const tab = this.dataset.tab;
+                    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                    document.getElementById('panel-' + tab).classList.add('active');
+                });
+            });
+
+            // ========== НИКНЕЙМ ==========
+            document.getElementById('nickInput').addEventListener('change', function() {
+                let val = this.value.trim();
+                if (val === '') val = 'Садовод';
+                state.nick = val;
+                saveState();
+                updateUI();
+            });
+
+            // ========== КЛИК ПО ЦВЕТКУ ==========
+            document.getElementById('flowerBtn').addEventListener('click', function(e) {
+                const power = getClickPower() + 1;
+                state.score += power;
+                saveState();
+                updateUI();
+
+                // Анимация пульсации
+                this.classList.remove('bloom');
+                void this.offsetWidth;
+                this.classList.add('bloom');
+
+                // Летающий +N
+                const rect = this.getBoundingClientRect();
+                const x = rect.left + rect.width / 2 + (Math.random() - 0.5) * 60;
+                const y = rect.top + (Math.random() - 0.5) * 40;
+                const float = document.createElement('div');
+                float.className = 'float-text';
+                float.textContent = `+${power}`;
+                float.style.left = x + 'px';
+                float.style.top = y + 'px';
+                document.body.appendChild(float);
+                setTimeout(() => float.remove(), 1000);
+            });
+
+            // ========== ПЕРЕРОЖДЕНИЕ ==========
+            document.getElementById('rebirthBtn').addEventListener('click', performRebirth);
+
+            // ========== СБРОС ТОПА ==========
+            document.getElementById('resetTopBtn').addEventListener('click', function() {
+                if (confirm('Удалить все записи топа?')) {
+                    state.top = [];
+                    saveState();
+                    updateUI();
+                }
+            });
+
+            // ========== ЗАПУСК ==========
+            updateUI();
+            window.addEventListener('beforeunload', saveState);
+        })();
+    </script>
+</body>
+  </html>
