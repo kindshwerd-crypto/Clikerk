@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Космический сад · кликер</title>
     <style>
-        /* ===== БАЗА (как в прошлой версии) ===== */
+        /* ===== БАЗА ===== */
         * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; user-select:none; }
         body { min-height:100vh; background:linear-gradient(135deg,#0b0e1a 0%,#1a1040 50%,#2d1b69 100%); display:flex; justify-content:center; align-items:center; padding:16px; color:#eef2f7; overflow:hidden; position:relative; }
         .stars { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; overflow:hidden; }
@@ -38,7 +38,7 @@
         .float-text { position:fixed; pointer-events:none; font-weight:800; font-size:2rem; color:#fcd34d; text-shadow:0 0 20px #f59e0b,0 2px 4px #000; animation:floatUp 1s forwards; z-index:999; }
         @keyframes floatUp { 0%{opacity:1;transform:translateY(0) scale(.8)} 100%{opacity:0;transform:translateY(-120px) scale(1.2)} }
 
-        /* ===== УЛУЧШЕНИЯ (без изменений) ===== */
+        /* ===== УЛУЧШЕНИЯ ===== */
         .upgrade-list { display:flex; flex-direction:column; gap:10px; margin:12px 0 18px; }
         .upgrade-item { background:rgba(255,255,255,0.05); border-radius:14px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border:1px solid rgba(255,255,255,0.06); }
         .upgrade-item .info .name { font-weight:600; font-size:1rem; }
@@ -68,6 +68,7 @@
         /* ===== ДРУЗЬЯ ===== */
         .friends-search { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
         .friends-search input { flex:1; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:40px; padding:8px 16px; color:#fff; outline:none; font-size:.9rem; min-width:120px; }
+        .friends-search input::placeholder { color:rgba(255,255,255,0.3); }
         .friends-search button { background:rgba(167,139,250,0.25); border:none; padding:8px 20px; border-radius:40px; color:#fff; font-weight:600; cursor:pointer; transition:.2s; font-size:.9rem; white-space:nowrap; }
         .friends-search button:hover { background:rgba(167,139,250,0.5); }
         .friend-result { background:rgba(255,255,255,0.05); border-radius:14px; padding:12px 16px; margin-bottom:12px; border:1px solid rgba(255,255,255,0.06); display:none; }
@@ -84,7 +85,7 @@
         .friends-list .friend-entry .fremove { background:transparent; border:none; color:rgba(255,255,255,0.2); cursor:pointer; font-size:.8rem; padding:0 4px; }
         .friends-list .friend-entry .fremove:hover { color:#f87171; }
 
-        /* ===== НОВОЕ: САД ===== */
+        /* ===== САД ===== */
         .garden-shop { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
         .seed-card { background:rgba(255,255,255,0.05); border-radius:14px; padding:12px 16px; flex:1; min-width:120px; border:1px solid rgba(255,255,255,0.06); text-align:center; }
         .seed-card .sname { font-weight:600; }
@@ -94,8 +95,8 @@
         .seed-card .buy-seed-btn:disabled { opacity:.3; cursor:not-allowed; }
         .seed-card .buy-seed-btn:not(:disabled):hover { background:rgba(167,139,250,0.5); }
 
-        .garden-plots { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px; margin:12px 0; }
-        .plot { background:rgba(255,255,255,0.04); border-radius:14px; padding:12px; border:1px solid rgba(255,255,255,0.06); text-align:center; min-height:130px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        .garden-plots { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:12px; margin:12px 0; }
+        .plot { background:rgba(255,255,255,0.04); border-radius:14px; padding:12px; border:1px solid rgba(255,255,255,0.06); text-align:center; min-height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         .plot .plant-emoji { font-size:2.8rem; }
         .plot .plant-stage { font-size:.7rem; color:rgba(255,255,255,0.5); }
         .plot .plant-progress { width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:10px; margin:6px 0; overflow:hidden; }
@@ -103,7 +104,12 @@
         .plot .plant-bonus { font-size:.7rem; color:#a78bfa; }
         .plot .harvest-btn { background:rgba(167,139,250,0.2); border:none; padding:2px 14px; border-radius:30px; color:#fff; cursor:pointer; font-size:.75rem; margin-top:4px; transition:.2s; }
         .plot .harvest-btn:hover { background:rgba(167,139,250,0.4); }
-        .plot .empty-plot { color:rgba(255,255,255,0.2); font-size:.8rem; }
+        .plot .empty-plot { color:rgba(255,255,255,0.3); font-size:.9rem; margin-bottom:4px; }
+        .plot .plant-buttons { display:flex; gap:4px; flex-wrap:wrap; justify-content:center; margin-top:6px; }
+        .plot .plant-buttons button { background:rgba(167,139,250,0.15); border:none; padding:2px 10px; border-radius:20px; color:#fff; font-size:.7rem; cursor:pointer; transition:.2s; }
+        .plot .plant-buttons button:hover { background:rgba(167,139,250,0.4); }
+        .plot .plant-buttons button:disabled { opacity:0.2; cursor:not-allowed; }
+
         .garden-stats { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:8px; font-size:.8rem; color:rgba(255,255,255,0.5); }
 
         /* ===== АДАПТИВ ===== */
@@ -113,7 +119,7 @@
             .game-wrapper { padding:14px 12px; }
             .header .nick-input { font-size:.8rem; padding:4px 12px; }
             .tabs .tab-btn { font-size:.75rem; padding:6px 0; }
-            .garden-plots { grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); }
+            .garden-plots { grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); }
         }
     </style>
 </head>
@@ -193,7 +199,7 @@
             <div class="friends-list" id="friendsList"></div>
         </div>
 
-        <!-- САД (НОВОЕ) -->
+        <!-- САД -->
         <div class="panel" id="panel-garden">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <span style="font-weight:600;">🌱 Магазин семян</span>
@@ -247,10 +253,9 @@
                 ],
                 top: [],
                 friends: [],
-                // НОВОЕ: сад
                 seeds: { grass: 0, flower: 0, tree: 0 },
-                plots: [], // массив объектов { type, stage, progress, plantedAt }
-                weather: { type: 'normal', startTime: Date.now(), duration: 30 * 1000 }, // 30 сек для демо (можно 30 мин)
+                plots: [],
+                weather: { type: 'normal', startTime: Date.now(), duration: 30 * 1000 },
             };
 
             let state = loadState();
@@ -260,42 +265,15 @@
 
             // ===== КОНСТАНТЫ РАСТЕНИЙ =====
             const PLANT_TYPES = {
-                grass: {
-                    name: 'Трава',
-                    emoji: '🌿',
-                    price: 10,
-                    stages: ['🌱', '🌿', '☘️', '🌾'],
-                    stageNames: ['Семя', 'Росток', 'Куст', 'Колоски'],
-                    growTime: 20, // секунд на полный рост
-                    bonusClick: 1,
-                    bonusAuto: 0,
-                    bonusGrowth: 1.0,
-                    harvestReward: 5,
-                },
-                flower: {
-                    name: 'Цветок',
-                    emoji: '🌸',
-                    price: 50,
-                    stages: ['🌱', '🌿', '🌺', '🌸'],
-                    stageNames: ['Семя', 'Росток', 'Бутон', 'Цветок'],
-                    growTime: 40,
-                    bonusClick: 2,
-                    bonusAuto: 1,
-                    bonusGrowth: 1.2,
-                    harvestReward: 20,
-                },
-                tree: {
-                    name: 'Дерево',
-                    emoji: '🌳',
-                    price: 200,
-                    stages: ['🌱', '🌿', '🌲', '🌳'],
-                    stageNames: ['Семя', 'Росток', 'Саженец', 'Дерево'],
-                    growTime: 80,
-                    bonusClick: 5,
-                    bonusAuto: 2,
-                    bonusGrowth: 1.5,
-                    harvestReward: 80,
-                }
+                grass: { name: 'Трава', emoji: '🌿', price: 10,
+                    stages: ['🌱', '🌿', '☘️', '🌾'], stageNames: ['Семя','Росток','Куст','Колоски'],
+                    growTime: 20, bonusClick: 1, bonusAuto: 0, bonusGrowth: 1.0, harvestReward: 5 },
+                flower: { name: 'Цветок', emoji: '🌸', price: 50,
+                    stages: ['🌱', '🌿', '🌺', '🌸'], stageNames: ['Семя','Росток','Бутон','Цветок'],
+                    growTime: 40, bonusClick: 2, bonusAuto: 1, bonusGrowth: 1.2, harvestReward: 20 },
+                tree: { name: 'Дерево', emoji: '🌳', price: 200,
+                    stages: ['🌱', '🌿', '🌲', '🌳'], stageNames: ['Семя','Росток','Саженец','Дерево'],
+                    growTime: 80, bonusClick: 5, bonusAuto: 2, bonusGrowth: 1.5, harvestReward: 80 }
             };
 
             // ===== ПОГОДА =====
@@ -338,26 +316,22 @@
                 localStorage.setItem('cosmicFlower', JSON.stringify(state));
             }
 
-            // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
+            // ===== ВСПОМОГАТЕЛЬНЫЕ =====
             function getUpgradeCost(upgrade) {
                 return Math.floor(upgrade.baseCost * Math.pow(upgrade.costMult, upgrade.level));
             }
-
             function getClickPower() {
                 const up = state.upgrades.find(u => u.id === 'click_power');
                 let base = (up ? up.level : 0) + state.rebirthBonus;
-                // добавить бонус от растений
                 base += getGardenClickBonus();
                 return base;
             }
-
             function getAutoClick() {
                 const up = state.upgrades.find(u => u.id === 'auto_click');
                 let base = up ? up.level : 0;
                 base += getGardenAutoBonus();
                 return base;
             }
-
             function getRebirthCost() {
                 return 1000 * (state.rebirths + 1);
             }
@@ -365,89 +339,69 @@
             // ===== БОНУСЫ САДА =====
             function getGardenClickBonus() {
                 let bonus = 0;
-                state.plots.forEach(p => {
-                    if (p.stage === 3) { // полностью выросло
-                        const info = PLANT_TYPES[p.type];
-                        if (info) bonus += info.bonusClick;
-                    }
-                });
+                state.plots.forEach(p => { if (p.stage === 3) {
+                    const info = PLANT_TYPES[p.type];
+                    if (info) bonus += info.bonusClick;
+                }});
                 return bonus;
             }
-
             function getGardenAutoBonus() {
                 let bonus = 0;
-                state.plots.forEach(p => {
-                    if (p.stage === 3) {
-                        const info = PLANT_TYPES[p.type];
-                        if (info) bonus += info.bonusAuto;
-                    }
-                });
+                state.plots.forEach(p => { if (p.stage === 3) {
+                    const info = PLANT_TYPES[p.type];
+                    if (info) bonus += info.bonusAuto;
+                }});
                 return bonus;
             }
-
             function getGardenGrowthMult() {
                 let mult = 1.0;
-                state.plots.forEach(p => {
-                    if (p.stage === 3) {
-                        const info = PLANT_TYPES[p.type];
-                        if (info) mult *= info.bonusGrowth;
-                    }
-                });
-                // погода
+                state.plots.forEach(p => { if (p.stage === 3) {
+                    const info = PLANT_TYPES[p.type];
+                    if (info) mult *= info.bonusGrowth;
+                }});
                 const weather = getCurrentWeather();
                 mult *= weather.mult;
                 return mult;
             }
-
             function getCurrentWeather() {
                 const now = Date.now();
                 const elapsed = (now - state.weather.startTime) / 1000;
                 if (elapsed > state.weather.duration / 1000) {
-                    // если время истекло, возвращаем normal
                     return WEATHERS.find(w => w.type === 'normal');
                 }
-                const found = WEATHERS.find(w => w.type === state.weather.type);
-                return found || WEATHERS[0];
+                return WEATHERS.find(w => w.type === state.weather.type) || WEATHERS[0];
             }
 
-            function getWeatherIcon() {
-                return getCurrentWeather().icon;
-            }
-
-            // ===== ОБНОВЛЕНИЕ РОСТА РАСТЕНИЙ =====
+            // ===== ОБНОВЛЕНИЕ РОСТА =====
             function updatePlants() {
                 const now = Date.now();
                 const mult = getGardenGrowthMult();
                 state.plots.forEach(p => {
                     if (p.stage < 3) {
                         const info = PLANT_TYPES[p.type];
-                        const totalTime = info.growTime; // секунд на 4 стадии
+                        const totalTime = info.growTime;
                         const timePerStage = totalTime / 4;
-                        // прогресс в секундах с момента посадки
                         const elapsed = (now - p.plantedAt) / 1000 * mult;
                         const newStage = Math.min(3, Math.floor(elapsed / timePerStage));
-                        if (newStage > p.stage) {
-                            p.stage = newStage;
-                        }
-                        // обновляем progress для отображения (0-1)
+                        if (newStage > p.stage) p.stage = newStage;
                         const stageProgress = (elapsed % timePerStage) / timePerStage;
                         p.progress = Math.min(1, (p.stage + stageProgress) / 4);
                         if (p.stage >= 3) p.progress = 1;
                     }
                 });
-                // сохраняем
                 saveState();
             }
 
-            // ===== ПОСАДКА РАСТЕНИЯ =====
+            // ===== ПОСАДКА =====
             function plantSeed(type) {
-                if (state.seeds[type] <= 0) return false;
-                // проверить свободную грядку (максимум 5)
+                if (state.seeds[type] <= 0) {
+                    alert('Нет семян этого типа! Купите в магазине.');
+                    return false;
+                }
                 if (state.plots.length >= 5) {
                     alert('Все грядки заняты! Соберите урожай.');
                     return false;
                 }
-                // добавить новое растение
                 state.plots.push({
                     type: type,
                     stage: 0,
@@ -465,11 +419,8 @@
                 const plot = state.plots[index];
                 if (!plot || plot.stage < 3) return;
                 const info = PLANT_TYPES[plot.type];
-                // даём награду
                 state.score += info.harvestReward;
-                // даём семена (можно 1-2)
                 state.seeds[plot.type] = (state.seeds[plot.type] || 0) + 1;
-                // удаляем растение
                 state.plots.splice(index, 1);
                 saveState();
                 updateUI();
@@ -491,7 +442,6 @@
 
             // ===== СМЕНА ПОГОДЫ =====
             function changeWeather() {
-                // выбираем случайную погоду, кроме текущей
                 const types = WEATHERS.map(w => w.type);
                 const current = state.weather.type;
                 let available = types.filter(t => t !== current);
@@ -499,15 +449,13 @@
                 const newType = available[Math.floor(Math.random() * available.length)];
                 state.weather.type = newType;
                 state.weather.startTime = Date.now();
-                // длительность 30 минут (или 30 секунд для демо)
-                state.weather.duration = 30 * 1000; // 30 сек, можно поменять на 30*60*1000
+                state.weather.duration = 30 * 1000; // 30 сек
                 saveState();
                 updateUI();
             }
 
             // ===== ОБНОВЛЕНИЕ UI =====
             function updateUI() {
-                // Счёт
                 document.getElementById('scoreDisplay').textContent = state.score;
                 document.getElementById('perClickDisplay').textContent = getClickPower() + 1;
                 document.getElementById('rebirthCountDisplay').textContent = state.rebirths;
@@ -515,35 +463,27 @@
 
                 document.getElementById('rebirthBonusDisplay').textContent = state.rebirthBonus;
                 document.getElementById('rebirthCostDisplay').textContent = getRebirthCost();
-
                 const rebirthBtn = document.getElementById('rebirthBtn');
                 rebirthBtn.disabled = (state.score < getRebirthCost());
 
-                // Цветок
                 const stage = getStage(state.score);
                 document.getElementById('flowerEmoji').textContent = stage.emoji;
                 document.getElementById('stageLabel').textContent = stage.label;
 
-                // Ник
+                // НИК: обновляем поле только если оно отличается от state.nick, чтобы не сбрасывать при вводе
                 const nickInput = document.getElementById('nickInput');
                 if (nickInput.value !== state.nick) {
                     nickInput.value = state.nick;
                 }
 
-                // Погода
                 const weather = getCurrentWeather();
                 document.getElementById('weatherIcon').textContent = weather.icon;
 
-                // Улучшения
                 renderUpgrades();
-                // Топ
                 renderTop();
-                // Друзья
                 renderFriends();
-                // Сад
                 renderGarden();
 
-                // Автокликер
                 if (autoInterval) clearInterval(autoInterval);
                 const autoAmount = getAutoClick();
                 if (autoAmount > 0) {
@@ -554,21 +494,17 @@
                     }, 1000);
                 }
 
-                // Садовый интервал для обновления роста (каждую секунду)
                 if (gardenInterval) clearInterval(gardenInterval);
                 gardenInterval = setInterval(() => {
                     updatePlants();
                     updateUI();
                 }, 1000);
 
-                // Погодный интервал (менять каждые 30 сек)
                 if (weatherInterval) clearInterval(weatherInterval);
-                weatherInterval = setInterval(() => {
-                    changeWeather();
-                }, 30 * 1000); // 30 сек
+                weatherInterval = setInterval(changeWeather, 30 * 1000);
             }
 
-            // ===== СТАДИИ ЦВЕТКА (главный кликер) =====
+            // ===== СТАДИИ ГЛАВНОГО ЦВЕТКА =====
             const STAGES = [
                 { minScore: 0, emoji: '🌱', label: 'Семечко' },
                 { minScore: 5, emoji: '🌿', label: 'Росток' },
@@ -587,12 +523,9 @@
                 { minScore: 1500000, emoji: '✨🌀', label: 'Космический венок' },
                 { minScore: 5000000, emoji: '🌌🌼', label: 'Бесконечный сад' },
             ];
-
             function getStage(score) {
                 let result = STAGES[0];
-                for (let s of STAGES) {
-                    if (score >= s.minScore) result = s;
-                }
+                for (let s of STAGES) if (score >= s.minScore) result = s;
                 return result;
             }
 
@@ -643,8 +576,8 @@
                     date: new Date().toLocaleDateString()
                 };
                 state.top.push(entry);
-                state.top.sort((a, b) => b.score - a.score);
-                if (state.top.length > 10) state.top = state.top.slice(0, 10);
+                state.top.sort((a,b) => b.score - a.score);
+                if (state.top.length > 10) state.top = state.top.slice(0,10);
                 state.rebirths += 1;
                 state.rebirthBonus += 1;
                 state.score = 0;
@@ -677,10 +610,9 @@
                 if (!nick) return null;
                 const entries = state.top.filter(e => e.name.toLowerCase() === nick.toLowerCase());
                 if (entries.length === 0) return null;
-                entries.sort((a, b) => b.score - a.score);
+                entries.sort((a,b) => b.score - a.score);
                 return entries[0];
             }
-
             function renderFriends() {
                 const container = document.getElementById('friendsList');
                 container.innerHTML = '';
@@ -708,14 +640,10 @@
                     });
                 });
             }
-
             function searchFriend() {
                 const input = document.getElementById('friendSearchInput');
                 const nick = input.value.trim();
-                if (!nick) {
-                    document.getElementById('friendResult').classList.remove('visible');
-                    return;
-                }
+                if (!nick) { document.getElementById('friendResult').classList.remove('visible'); return; }
                 const player = findPlayerInTop(nick);
                 const resultDiv = document.getElementById('friendResult');
                 const nameDiv = document.getElementById('friendResultName');
@@ -735,7 +663,6 @@
                     resultDiv.classList.add('visible');
                 }
             }
-
             function addFriend() {
                 const addBtn = document.getElementById('friendAddBtn');
                 const nick = addBtn.dataset.nick;
@@ -748,7 +675,7 @@
                 }
             }
 
-            // ===== САД (рендер) =====
+            // ===== САД (РЕНДЕР) =====
             function renderGarden() {
                 // Магазин
                 const shopContainer = document.getElementById('seedShop');
@@ -781,7 +708,7 @@
                 const freePlots = totalPlots - state.plots.length;
                 document.getElementById('freePlots').textContent = freePlots;
 
-                // Отображаем существующие
+                // Существующие
                 state.plots.forEach((plot, idx) => {
                     const info = PLANT_TYPES[plot.type];
                     const stageIdx = plot.stage;
@@ -802,16 +729,32 @@
                     plotsContainer.appendChild(div);
                 });
 
-                // Добавляем пустые грядки
+                // Пустые грядки
                 for (let i = 0; i < freePlots; i++) {
                     const div = document.createElement('div');
                     div.className = 'plot';
                     div.innerHTML = `
                         <div class="empty-plot">🪴 Пусто</div>
-                        <div style="font-size:.7rem; color:rgba(255,255,255,0.2);">Свободно</div>
+                        <div class="plant-buttons">
+                            ${Object.keys(PLANT_TYPES).map(type => {
+                                const count = state.seeds[type] || 0;
+                                const info = PLANT_TYPES[type];
+                                return `<button class="plant-btn" data-type="${type}" ${count <= 0 ? 'disabled' : ''}>
+                                    ${info.emoji} ${info.name} (${count})
+                                </button>`;
+                            }).join('')}
+                        </div>
                     `;
                     plotsContainer.appendChild(div);
                 }
+
+                // Обработчики посадки
+                document.querySelectorAll('.plant-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const type = this.dataset.type;
+                        plantSeed(type);
+                    });
+                });
 
                 // Обработчики сбора
                 document.querySelectorAll('.harvest-btn').forEach(btn => {
@@ -821,7 +764,6 @@
                     });
                 });
 
-                // Обновляем бонусы внизу
                 document.getElementById('gardenClickBonus').textContent = getGardenClickBonus();
                 document.getElementById('gardenAutoBonus').textContent = getGardenAutoBonus();
                 document.getElementById('gardenGrowthMult').textContent = getGardenGrowthMult().toFixed(2);
@@ -829,16 +771,26 @@
             }
 
             // ===== СОБЫТИЯ =====
-            // Никнейм
-            document.getElementById('nickInput').addEventListener('change', function() {
+            // НИКНЕЙМ — сохраняем сразу при вводе (каждое нажатие) и при потере фокуса
+            const nickInput = document.getElementById('nickInput');
+            nickInput.addEventListener('input', function() {
                 let val = this.value.trim();
                 if (val === '') val = 'Садовод';
                 state.nick = val;
                 saveState();
+                // НЕ вызываем updateUI, чтобы не перезаписывать поле
+            });
+            // Также сохраняем при потере фокуса (на всякий случай)
+            nickInput.addEventListener('blur', function() {
+                let val = this.value.trim();
+                if (val === '') val = 'Садовод';
+                state.nick = val;
+                saveState();
+                // обновим UI, чтобы подхватилось везде (но поле не перезапишем, т.к. оно совпадает)
                 updateUI();
             });
 
-            // Клик по цветку
+            // Остальные события
             document.getElementById('flowerBtn').addEventListener('click', function(e) {
                 const power = getClickPower() + 1;
                 state.score += power;
@@ -859,10 +811,7 @@
                 setTimeout(() => float.remove(), 1000);
             });
 
-            // Перерождение
             document.getElementById('rebirthBtn').addEventListener('click', performRebirth);
-
-            // Сброс топа
             document.getElementById('resetTopBtn').addEventListener('click', function() {
                 if (confirm('Удалить все записи топа?')) {
                     state.top = [];
@@ -870,15 +819,12 @@
                     updateUI();
                 }
             });
-
-            // Поиск друга
             document.getElementById('friendSearchBtn').addEventListener('click', searchFriend);
             document.getElementById('friendSearchInput').addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') searchFriend();
             });
             document.getElementById('friendAddBtn').addEventListener('click', addFriend);
 
-            // ===== ВКЛАДКИ =====
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -889,10 +835,9 @@
                 });
             });
 
-            // ===== ЗАПУСК =====
             updateUI();
             window.addEventListener('beforeunload', saveState);
         })();
     </script>
 </body>
-                    </html>
+</html>
