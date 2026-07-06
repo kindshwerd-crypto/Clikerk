@@ -5,62 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Космический сад · кликер</title>
     <style>
-        /* ===== БАЗА (динамический фон будет переопределяться через JS) ===== */
+        /* ===== БАЗА ===== */
         * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; user-select:none; }
-        body {
-            min-height:100vh;
-            /* дефолтный фон (звёзды + градиент) будет установлен через JS, чтобы можно было переопределять */
-            background: linear-gradient(135deg, #0b0e1a 0%, #1a1040 50%, #2d1b69 100%);
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            padding:16px;
-            color:#eef2f7;
-            overflow:hidden;
-            position:relative;
-            transition: background 0.5s ease;
-        }
-        /* Звёзды (скрываются, если выбран свой фон) */
-        .stars {
-            position:fixed;
-            top:0;
-            left:0;
-            width:100%;
-            height:100%;
-            pointer-events:none;
-            z-index:0;
-            overflow:hidden;
-        }
-        .star {
-            position:absolute;
-            background:#fff;
-            border-radius:50%;
-            animation:twinkle var(--duration) ease-in-out infinite alternate;
-            opacity:0.4;
-            width:var(--size);
-            height:var(--size);
-            left:var(--left);
-            top:var(--top);
-            animation-delay:var(--delay);
-        }
+        body { min-height:100vh; background:linear-gradient(135deg,#0b0e1a 0%,#1a1040 50%,#2d1b69 100%); display:flex; justify-content:center; align-items:center; padding:16px; color:#eef2f7; overflow:hidden; position:relative; transition:background .5s; }
+        .stars { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; overflow:hidden; }
+        .star { position:absolute; background:#fff; border-radius:50%; animation:twinkle var(--duration) ease-in-out infinite alternate; opacity:0.4; width:var(--size); height:var(--size); left:var(--left); top:var(--top); animation-delay:var(--delay); }
         @keyframes twinkle { 0%{opacity:0.2;transform:scale(0.8)} 100%{opacity:1;transform:scale(1.2)} }
-
-        .game-wrapper {
-            position:relative;
-            z-index:1;
-            width:100%;
-            max-width:760px;
-            background:rgba(20,25,50,0.7);
-            backdrop-filter:blur(12px);
-            -webkit-backdrop-filter:blur(12px);
-            border-radius:36px;
-            padding:20px 18px 28px;
-            box-shadow:0 20px 60px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.1);
-            border:1px solid rgba(255,255,255,0.08);
-        }
+        .game-wrapper { position:relative; z-index:1; width:100%; max-width:760px; background:rgba(20,25,50,0.7); backdrop-filter:blur(12px); border-radius:36px; padding:20px 18px 28px; box-shadow:0 20px 60px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.08); }
         .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:12px; flex-wrap:wrap; }
         .header .nick-input { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:40px; padding:6px 16px; color:#fff; font-size:.95rem; outline:none; flex:1; min-width:120px; transition:.2s; }
         .header .nick-input:focus { border-color:#a78bfa; box-shadow:0 0 12px rgba(167,139,250,0.3); }
+        .header .nick-input.error { border-color:#f87171; box-shadow:0 0 12px rgba(248,113,113,0.3); }
         .header .stats-mini { font-size:.8rem; color:rgba(255,255,255,0.5); white-space:nowrap; display:flex; gap:12px; align-items:center; }
         .weather-icon { font-size:1.4rem; display:inline-block; }
         .tabs { display:flex; gap:6px; margin-bottom:20px; background:rgba(0,0,0,0.3); border-radius:60px; padding:4px; flex-wrap:wrap; }
@@ -71,7 +26,7 @@
         .panel.active { display:block; }
         @keyframes fadeUp { 0%{opacity:0;transform:translateY(12px)} 100%{opacity:1;transform:translateY(0)} }
 
-        /* ===== Остальные стили (без изменений) ===== */
+        /* Остальные стили (без изменений) */
         .clicker-area { display:flex; flex-direction:column; align-items:center; gap:12px; }
         .score-box { text-align:center; }
         .score-box .score { font-size:3rem; font-weight:800; background:linear-gradient(135deg,#fcd34d,#f59e0b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; letter-spacing:-1px; }
@@ -110,7 +65,6 @@
 
         .friends-search { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
         .friends-search input { flex:1; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:40px; padding:8px 16px; color:#fff; outline:none; font-size:.9rem; min-width:120px; }
-        .friends-search input::placeholder { color:rgba(255,255,255,0.3); }
         .friends-search button { background:rgba(167,139,250,0.25); border:none; padding:8px 20px; border-radius:40px; color:#fff; font-weight:600; cursor:pointer; transition:.2s; font-size:.9rem; white-space:nowrap; }
         .friends-search button:hover { background:rgba(167,139,250,0.5); }
         .friend-result { background:rgba(255,255,255,0.05); border-radius:14px; padding:12px 16px; margin-bottom:12px; border:1px solid rgba(255,255,255,0.06); display:none; }
@@ -153,104 +107,21 @@
 
         .garden-stats { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:8px; font-size:.8rem; color:rgba(255,255,255,0.5); }
 
-        /* ===== Стили для вкладки "Фон" ===== */
-        .bg-settings {
-            display:flex;
-            flex-direction:column;
-            gap:16px;
-        }
-        .bg-settings .radio-group {
-            display:flex;
-            gap:20px;
-            flex-wrap:wrap;
-        }
-        .bg-settings .radio-group label {
-            display:flex;
-            align-items:center;
-            gap:6px;
-            cursor:pointer;
-            color:rgba(255,255,255,0.8);
-        }
-        .bg-settings .radio-group input[type="radio"] {
-            accent-color:#a78bfa;
-            width:18px;
-            height:18px;
-            cursor:pointer;
-        }
-        .bg-settings .file-input-area {
-            display:flex;
-            align-items:center;
-            gap:12px;
-            flex-wrap:wrap;
-        }
-        .bg-settings .file-input-area input[type="file"] {
-            color:#fff;
-            background:rgba(255,255,255,0.05);
-            border:1px solid rgba(255,255,255,0.15);
-            border-radius:30px;
-            padding:6px 12px;
-            cursor:pointer;
-            font-size:.9rem;
-            width:100%;
-            max-width:280px;
-        }
-        .bg-settings .file-input-area input[type="file"]::file-selector-button {
-            background:rgba(167,139,250,0.25);
-            border:none;
-            padding:4px 16px;
-            border-radius:30px;
-            color:#fff;
-            cursor:pointer;
-            font-weight:600;
-            margin-right:10px;
-        }
-        .bg-settings .file-input-area input[type="file"]::file-selector-button:hover {
-            background:rgba(167,139,250,0.5);
-        }
-        .bg-settings .color-input-area {
-            display:flex;
-            align-items:center;
-            gap:12px;
-            flex-wrap:wrap;
-        }
-        .bg-settings .color-input-area input[type="color"] {
-            width:60px;
-            height:40px;
-            border:none;
-            border-radius:10px;
-            background:transparent;
-            cursor:pointer;
-        }
-        .bg-settings .color-input-area input[type="text"] {
-            background:rgba(255,255,255,0.08);
-            border:1px solid rgba(255,255,255,0.15);
-            border-radius:30px;
-            padding:6px 16px;
-            color:#fff;
-            font-size:.9rem;
-            outline:none;
-            width:120px;
-        }
-        .bg-settings .color-input-area input[type="text"]:focus {
-            border-color:#a78bfa;
-        }
-        .bg-settings .reset-bg-btn {
-            background:rgba(255,255,255,0.05);
-            border:1px solid rgba(255,255,255,0.1);
-            color:rgba(255,255,255,0.5);
-            padding:6px 20px;
-            border-radius:30px;
-            cursor:pointer;
-            font-size:.85rem;
-            transition:.2s;
-            align-self:flex-start;
-        }
-        .bg-settings .reset-bg-btn:hover {
-            background:rgba(255,255,255,0.1);
-            color:#fff;
-        }
+        .bg-settings { display:flex; flex-direction:column; gap:16px; }
+        .bg-settings .radio-group { display:flex; gap:20px; flex-wrap:wrap; }
+        .bg-settings .radio-group label { display:flex; align-items:center; gap:6px; cursor:pointer; color:rgba(255,255,255,0.8); }
+        .bg-settings .radio-group input[type="radio"] { accent-color:#a78bfa; width:18px; height:18px; cursor:pointer; }
+        .bg-settings .file-input-area { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+        .bg-settings .file-input-area input[type="file"] { color:#fff; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); border-radius:30px; padding:6px 12px; cursor:pointer; font-size:.9rem; width:100%; max-width:280px; }
+        .bg-settings .file-input-area input[type="file"]::file-selector-button { background:rgba(167,139,250,0.25); border:none; padding:4px 16px; border-radius:30px; color:#fff; cursor:pointer; font-weight:600; margin-right:10px; }
+        .bg-settings .file-input-area input[type="file"]::file-selector-button:hover { background:rgba(167,139,250,0.5); }
+        .bg-settings .color-input-area { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+        .bg-settings .color-input-area input[type="color"] { width:60px; height:40px; border:none; border-radius:10px; background:transparent; cursor:pointer; }
+        .bg-settings .color-input-area input[type="text"] { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:30px; padding:6px 16px; color:#fff; font-size:.9rem; outline:none; width:120px; }
+        .bg-settings .color-input-area input[type="text"]:focus { border-color:#a78bfa; }
+        .bg-settings .reset-bg-btn { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.5); padding:6px 20px; border-radius:30px; cursor:pointer; font-size:.85rem; transition:.2s; align-self:flex-start; }
+        .bg-settings .reset-bg-btn:hover { background:rgba(255,255,255,0.1); color:#fff; }
 
-        /* ===== Адаптив ===== */
         @media (max-width:500px) {
             .flower-btn { width:150px; height:150px; font-size:3.8rem; }
             .score-box .score { font-size:2.2rem; }
@@ -263,7 +134,7 @@
 </head>
 <body>
 
-    <!-- ЗВЁЗДЫ (будут скрыты, если выбран свой фон) -->
+    <!-- ЗВЁЗДЫ -->
     <div class="stars" id="starsContainer"></div>
 
     <div class="game-wrapper">
@@ -276,7 +147,7 @@
             </div>
         </div>
 
-        <!-- ВКЛАДКИ (добавлена "Фон") -->
+        <!-- ВКЛАДКИ -->
         <div class="tabs">
             <button class="tab-btn active" data-tab="clicker">🌸 Цветок</button>
             <button class="tab-btn" data-tab="upgrades">⬆️ Улучшения</button>
@@ -359,34 +230,22 @@
             </div>
         </div>
 
-        <!-- ===== НОВАЯ ПАНЕЛЬ: ФОН ===== -->
+        <!-- ФОН -->
         <div class="panel" id="panel-bg">
             <div class="bg-settings">
                 <div class="radio-group">
-                    <label>
-                        <input type="radio" name="bgMode" value="stars" checked />
-                        ✨ Космос (звёзды)
-                    </label>
-                    <label>
-                        <input type="radio" name="bgMode" value="image" />
-                        🖼️ Своё изображение
-                    </label>
-                    <label>
-                        <input type="radio" name="bgMode" value="color" />
-                        🎨 Цвет
-                    </label>
+                    <label><input type="radio" name="bgMode" value="stars" checked /> ✨ Космос (звёзды)</label>
+                    <label><input type="radio" name="bgMode" value="image" /> 🖼️ Своё изображение</label>
+                    <label><input type="radio" name="bgMode" value="color" /> 🎨 Цвет</label>
                 </div>
-
                 <div class="file-input-area" id="bgImageArea" style="display:none;">
                     <input type="file" id="bgFileInput" accept="image/*" />
                     <span style="font-size:.8rem; color:rgba(255,255,255,0.3);">(JPG, PNG, WEBP)</span>
                 </div>
-
                 <div class="color-input-area" id="bgColorArea" style="display:none;">
                     <input type="color" id="bgColorPicker" value="#1a1040" />
                     <input type="text" id="bgColorText" placeholder="#1a1040" maxlength="7" />
                 </div>
-
                 <button class="reset-bg-btn" id="resetBgBtn">↺ Сбросить к космосу</button>
                 <div style="font-size:.8rem; color:rgba(255,255,255,0.3); margin-top:6px;">
                     Настройки сохраняются автоматически.
@@ -415,7 +274,7 @@
                 }
             })();
 
-            // ===== СОСТОЯНИЕ (ДОБАВЛЕНЫ НАСТРОЙКИ ФОНА) =====
+            // ===== СОСТОЯНИЕ =====
             const DEFAULT_STATE = {
                 score: 0,
                 rebirths: 0,
@@ -430,9 +289,8 @@
                 seeds: { grass: 0, flower: 0, tree: 0 },
                 plots: [],
                 weather: { type: 'normal', startTime: Date.now(), duration: 30 * 1000 },
-                // НАСТРОЙКИ ФОНА
-                bgMode: 'stars',    // 'stars', 'image', 'color'
-                bgImage: '',        // base64
+                bgMode: 'stars',
+                bgImage: '',
                 bgColor: '#1a1040',
             };
 
@@ -502,8 +360,6 @@
                 const body = document.body;
                 const starsContainer = document.getElementById('starsContainer');
                 const mode = state.bgMode;
-
-                // Скрываем/показываем звёзды
                 if (mode === 'stars') {
                     starsContainer.style.display = 'block';
                     body.style.background = 'linear-gradient(135deg, #0b0e1a 0%, #1a1040 50%, #2d1b69 100%)';
@@ -517,7 +373,6 @@
                     body.style.background = state.bgColor;
                     body.style.backgroundSize = 'cover';
                 } else {
-                    // fallback
                     starsContainer.style.display = 'block';
                     body.style.background = 'linear-gradient(135deg, #0b0e1a 0%, #1a1040 50%, #2d1b69 100%)';
                     body.style.backgroundSize = 'cover';
@@ -657,14 +512,13 @@
                 const newType = available[Math.floor(Math.random() * available.length)];
                 state.weather.type = newType;
                 state.weather.startTime = Date.now();
-                state.weather.duration = 30 * 1000; // 30 сек
+                state.weather.duration = 30 * 1000;
                 saveState();
                 updateUI();
             }
 
             // ===== ОБНОВЛЕНИЕ UI =====
             function updateUI() {
-                // Основные элементы
                 document.getElementById('scoreDisplay').textContent = state.score;
                 document.getElementById('perClickDisplay').textContent = getClickPower() + 1;
                 document.getElementById('rebirthCountDisplay').textContent = state.rebirths;
@@ -679,6 +533,7 @@
                 document.getElementById('flowerEmoji').textContent = stage.emoji;
                 document.getElementById('stageLabel').textContent = stage.label;
 
+                // Ник: обновляем поле только если отличается
                 const nickInput = document.getElementById('nickInput');
                 if (nickInput.value !== state.nick) {
                     nickInput.value = state.nick;
@@ -687,17 +542,14 @@
                 const weather = getCurrentWeather();
                 document.getElementById('weatherIcon').textContent = weather.icon;
 
-                // Рендер вкладок
                 renderUpgrades();
                 renderTop();
                 renderFriends();
                 renderGarden();
                 renderBgSettings();
 
-                // Применяем фон
                 applyBackground();
 
-                // Таймеры
                 if (autoInterval) clearInterval(autoInterval);
                 const autoAmount = getAutoClick();
                 if (autoAmount > 0) {
@@ -828,6 +680,23 @@
                     container.appendChild(div);
                 });
             }
+
+            // ===== СБРОС ТОПА (с защитой по никам) =====
+            document.getElementById('resetTopBtn').addEventListener('click', function() {
+                const allowedNicks = ['Panika67', 'Вован7816'];
+                // Проверяем, что текущий ник входит в список разрешённых (регистр учитывается, но для надёжности сравниваем без учёта регистра)
+                const currentNick = state.nick.trim();
+                const isAllowed = allowedNicks.some(n => n.toLowerCase() === currentNick.toLowerCase());
+                if (!isAllowed) {
+                    alert('⛔ Только Panika67 и Вован7816 могут сбросить топ!');
+                    return;
+                }
+                if (confirm('Удалить все записи топа?')) {
+                    state.top = [];
+                    saveState();
+                    updateUI();
+                }
+            });
 
             // ===== ДРУЗЬЯ =====
             function findPlayerInTop(nick) {
@@ -988,15 +857,10 @@
                 document.getElementById('seedCountDisplay').textContent = Object.values(state.seeds).reduce((a,b) => a+b, 0);
             }
 
-            // ===== НАСТРОЙКИ ФОНА =====
+            // ===== ФОН =====
             function renderBgSettings() {
-                // Устанавливаем радиокнопки
                 const radios = document.querySelectorAll('input[name="bgMode"]');
-                radios.forEach(r => {
-                    r.checked = (r.value === state.bgMode);
-                });
-
-                // Показываем/скрываем элементы
+                radios.forEach(r => { r.checked = (r.value === state.bgMode); });
                 const imageArea = document.getElementById('bgImageArea');
                 const colorArea = document.getElementById('bgColorArea');
                 if (state.bgMode === 'image') {
@@ -1009,19 +873,14 @@
                     imageArea.style.display = 'none';
                     colorArea.style.display = 'none';
                 }
-
-                // Устанавливаем текущий цвет в палитре и поле
                 document.getElementById('bgColorPicker').value = state.bgColor;
                 document.getElementById('bgColorText').value = state.bgColor;
             }
 
-            // ===== ОБРАБОТЧИКИ ДЛЯ ФОНА =====
             function setupBgHandlers() {
-                // Радиокнопки
                 document.querySelectorAll('input[name="bgMode"]').forEach(r => {
                     r.addEventListener('change', function() {
                         state.bgMode = this.value;
-                        // Если выбрали изображение, но изображения нет — предложим выбрать
                         if (this.value === 'image' && !state.bgImage) {
                             document.getElementById('bgFileInput').click();
                         }
@@ -1029,8 +888,6 @@
                         updateUI();
                     });
                 });
-
-                // Загрузка файла
                 document.getElementById('bgFileInput').addEventListener('change', function(e) {
                     const file = this.files[0];
                     if (!file) return;
@@ -1038,15 +895,12 @@
                     reader.onload = function(ev) {
                         state.bgImage = ev.target.result;
                         state.bgMode = 'image';
-                        // переключаем радиокнопку
                         document.querySelector('input[name="bgMode"][value="image"]').checked = true;
                         saveState();
                         updateUI();
                     };
                     reader.readAsDataURL(file);
                 });
-
-                // Цвет: выбор из палитры
                 document.getElementById('bgColorPicker').addEventListener('input', function() {
                     state.bgColor = this.value;
                     state.bgMode = 'color';
@@ -1055,8 +909,6 @@
                     saveState();
                     updateUI();
                 });
-
-                // Цвет: ручной ввод HEX
                 document.getElementById('bgColorText').addEventListener('input', function() {
                     let val = this.value.trim();
                     if (/^#[0-9a-f]{6}$/i.test(val)) {
@@ -1068,8 +920,6 @@
                         updateUI();
                     }
                 });
-
-                // Сброс к космосу
                 document.getElementById('resetBgBtn').addEventListener('click', function() {
                     state.bgMode = 'stars';
                     state.bgImage = '';
@@ -1080,28 +930,43 @@
                 });
             }
 
-            // ===== СОБЫТИЯ (НИК, КЛИК И Т.Д.) =====
+            // ===== НИКНЕЙМ С ПРОВЕРКОЙ УНИКАЛЬНОСТИ =====
+            function isNickTaken(nick, excludeCurrent = true) {
+                // Проверяем, есть ли в топе запись с таким ником (без учёта регистра)
+                // Если excludeCurrent = true, то запись с текущим ником игрока не считается занятой
+                const currentNick = state.nick;
+                return state.top.some(entry => {
+                    const match = entry.name.toLowerCase() === nick.toLowerCase();
+                    if (excludeCurrent && currentNick.toLowerCase() === nick.toLowerCase()) {
+                        // это тот же игрок, разрешаем
+                        return false;
+                    }
+                    return match;
+                });
+            }
+
             const nickInput = document.getElementById('nickInput');
+            let previousNick = state.nick; // для возврата при ошибке
+
             nickInput.addEventListener('input', function() {
                 let val = this.value.trim();
                 if (val === '') val = 'Садовод';
+                // Проверяем уникальность
+                if (isNickTaken(val, true)) {
+                    // Ник занят другим игроком
+                    this.classList.add('error');
+                    // Показываем ошибку, но не сохраняем ник
+                    // Можно вывести сообщение (alert) или просто подсветить
+                    // Чтобы не раздражать, просто подсветим и не дадим сохранить
+                    // При этом поле остаётся красным, пока не введут уникальный ник
+                    // Состояние не меняем
+                    return;
+                }
+                this.classList.remove('error');
+                // Если ник свободен или это наш текущий ник, сохраняем
                 const oldNick = state.nick;
                 state.nick = val;
-                const defaultNames = ['Plant', 'Садовод'];
-                state.top = state.top.map(entry => {
-                    if (entry.name === oldNick || defaultNames.includes(entry.name)) {
-                        return { ...entry, name: val };
-                    }
-                    return entry;
-                });
-                saveState();
-                updateUI();
-            });
-            nickInput.addEventListener('blur', function() {
-                let val = this.value.trim();
-                if (val === '') val = 'Садовод';
-                const oldNick = state.nick;
-                state.nick = val;
+                // Обновляем топ (заменяем старый ник на новый, если это был наш ник)
                 const defaultNames = ['Plant', 'Садовод'];
                 state.top = state.top.map(entry => {
                     if (entry.name === oldNick || defaultNames.includes(entry.name)) {
@@ -1113,6 +978,34 @@
                 updateUI();
             });
 
+            nickInput.addEventListener('blur', function() {
+                let val = this.value.trim();
+                if (val === '') val = 'Садовод';
+                if (isNickTaken(val, true)) {
+                    // Если ник занят, возвращаем предыдущий ник
+                    this.value = state.nick;
+                    this.classList.remove('error');
+                    // Можно показать краткое уведомление
+                    alert('⚠️ Ник "' + val + '" уже занят другим игроком!');
+                    return;
+                }
+                this.classList.remove('error');
+                // Если изменился, сохраняем (но input уже сохранил)
+                if (state.nick !== val) {
+                    const oldNick = state.nick;
+                    state.nick = val;
+                    state.top = state.top.map(entry => {
+                        if (entry.name === oldNick || ['Plant','Садовод'].includes(entry.name)) {
+                            return { ...entry, name: val };
+                        }
+                        return entry;
+                    });
+                    saveState();
+                    updateUI();
+                }
+            });
+
+            // Остальные события
             document.getElementById('flowerBtn').addEventListener('click', function(e) {
                 const power = getClickPower() + 1;
                 state.score += power;
@@ -1134,20 +1027,13 @@
             });
 
             document.getElementById('rebirthBtn').addEventListener('click', performRebirth);
-            document.getElementById('resetTopBtn').addEventListener('click', function() {
-                if (confirm('Удалить все записи топа?')) {
-                    state.top = [];
-                    saveState();
-                    updateUI();
-                }
-            });
+
             document.getElementById('friendSearchBtn').addEventListener('click', searchFriend);
             document.getElementById('friendSearchInput').addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') searchFriend();
             });
             document.getElementById('friendAddBtn').addEventListener('click', addFriend);
 
-            // Вкладки
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
