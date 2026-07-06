@@ -470,7 +470,7 @@
                 document.getElementById('flowerEmoji').textContent = stage.emoji;
                 document.getElementById('stageLabel').textContent = stage.label;
 
-                // НИК: обновляем поле только если оно отличается от state.nick, чтобы не сбрасывать при вводе
+                // Ник: обновляем поле только если отличается
                 const nickInput = document.getElementById('nickInput');
                 if (nickInput.value !== state.nick) {
                     nickInput.value = state.nick;
@@ -565,22 +565,38 @@
                 });
             }
 
-            // ===== ПЕРЕРОЖДЕНИЕ =====
+            // ===== ПЕРЕРОЖДЕНИЕ (ИСПРАВЛЕННОЕ) =====
             function performRebirth() {
                 const cost = getRebirthCost();
                 if (state.score < cost) return;
-                const entry = {
+
+                // Новая запись
+                const newEntry = {
                     name: state.nick || 'Садовод',
                     score: state.score,
                     rebirths: state.rebirths + 1,
                     date: new Date().toLocaleDateString()
                 };
-                state.top.push(entry);
-                state.top.sort((a,b) => b.score - a.score);
-                if (state.top.length > 10) state.top = state.top.slice(0,10);
+
+                // Ищем запись с таким же ником (регистронезависимо)
+                const index = state.top.findIndex(e => e.name.toLowerCase() === newEntry.name.toLowerCase());
+                if (index !== -1) {
+                    // Обновляем существующую запись
+                    state.top[index] = newEntry;
+                } else {
+                    // Добавляем новую
+                    state.top.push(newEntry);
+                }
+
+                // Сортируем по убыванию счёта и обрезаем до 10
+                state.top.sort((a, b) => b.score - a.score);
+                if (state.top.length > 10) state.top = state.top.slice(0, 10);
+
+                // Само перерождение
                 state.rebirths += 1;
                 state.rebirthBonus += 1;
                 state.score = 0;
+
                 saveState();
                 updateUI();
             }
@@ -771,22 +787,38 @@
             }
 
             // ===== СОБЫТИЯ =====
-            // НИКНЕЙМ — сохраняем сразу при вводе (каждое нажатие) и при потере фокуса
+            // НИКНЕЙМ: сохраняем при вводе и при потери фокуса, а также автоматически обновляем старые записи в топе
             const nickInput = document.getElementById('nickInput');
             nickInput.addEventListener('input', function() {
                 let val = this.value.trim();
                 if (val === '') val = 'Садовод';
+                const oldNick = state.nick;
                 state.nick = val;
+                // Заменяем старый ник на новый во всех записях топа, где ник равен старому или "Plant" или "Садовод"
+                const defaultNames = ['Plant', 'Садовод'];
+                state.top = state.top.map(entry => {
+                    if (entry.name === oldNick || defaultNames.includes(entry.name)) {
+                        return { ...entry, name: val };
+                    }
+                    return entry;
+                });
                 saveState();
-                // НЕ вызываем updateUI, чтобы не перезаписывать поле
+                updateUI();
             });
-            // Также сохраняем при потере фокуса (на всякий случай)
+
             nickInput.addEventListener('blur', function() {
                 let val = this.value.trim();
                 if (val === '') val = 'Садовод';
+                const oldNick = state.nick;
                 state.nick = val;
+                const defaultNames = ['Plant', 'Садовод'];
+                state.top = state.top.map(entry => {
+                    if (entry.name === oldNick || defaultNames.includes(entry.name)) {
+                        return { ...entry, name: val };
+                    }
+                    return entry;
+                });
                 saveState();
-                // обновим UI, чтобы подхватилось везде (но поле не перезапишем, т.к. оно совпадает)
                 updateUI();
             });
 
@@ -840,4 +872,4 @@
         })();
     </script>
 </body>
-</html>
+    </html>
