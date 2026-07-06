@@ -5,13 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Космический сад · кликер</title>
     <style>
-        /* ===== БАЗА ===== */
+        /* ===== БАЗА (динамический фон будет переопределяться через JS) ===== */
         * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; user-select:none; }
-        body { min-height:100vh; background:linear-gradient(135deg,#0b0e1a 0%,#1a1040 50%,#2d1b69 100%); display:flex; justify-content:center; align-items:center; padding:16px; color:#eef2f7; overflow:hidden; position:relative; }
-        .stars { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; overflow:hidden; }
-        .star { position:absolute; background:#fff; border-radius:50%; animation:twinkle var(--duration) ease-in-out infinite alternate; opacity:0.4; width:var(--size); height:var(--size); left:var(--left); top:var(--top); animation-delay:var(--delay); }
+        body {
+            min-height:100vh;
+            /* дефолтный фон (звёзды + градиент) будет установлен через JS, чтобы можно было переопределять */
+            background: linear-gradient(135deg, #0b0e1a 0%, #1a1040 50%, #2d1b69 100%);
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            padding:16px;
+            color:#eef2f7;
+            overflow:hidden;
+            position:relative;
+            transition: background 0.5s ease;
+        }
+        /* Звёзды (скрываются, если выбран свой фон) */
+        .stars {
+            position:fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            pointer-events:none;
+            z-index:0;
+            overflow:hidden;
+        }
+        .star {
+            position:absolute;
+            background:#fff;
+            border-radius:50%;
+            animation:twinkle var(--duration) ease-in-out infinite alternate;
+            opacity:0.4;
+            width:var(--size);
+            height:var(--size);
+            left:var(--left);
+            top:var(--top);
+            animation-delay:var(--delay);
+        }
         @keyframes twinkle { 0%{opacity:0.2;transform:scale(0.8)} 100%{opacity:1;transform:scale(1.2)} }
-        .game-wrapper { position:relative; z-index:1; width:100%; max-width:760px; background:rgba(20,25,50,0.7); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-radius:36px; padding:20px 18px 28px; box-shadow:0 20px 60px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.08); }
+
+        .game-wrapper {
+            position:relative;
+            z-index:1;
+            width:100%;
+            max-width:760px;
+            background:rgba(20,25,50,0.7);
+            backdrop-filter:blur(12px);
+            -webkit-backdrop-filter:blur(12px);
+            border-radius:36px;
+            padding:20px 18px 28px;
+            box-shadow:0 20px 60px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.1);
+            border:1px solid rgba(255,255,255,0.08);
+        }
         .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:12px; flex-wrap:wrap; }
         .header .nick-input { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:40px; padding:6px 16px; color:#fff; font-size:.95rem; outline:none; flex:1; min-width:120px; transition:.2s; }
         .header .nick-input:focus { border-color:#a78bfa; box-shadow:0 0 12px rgba(167,139,250,0.3); }
@@ -25,7 +71,7 @@
         .panel.active { display:block; }
         @keyframes fadeUp { 0%{opacity:0;transform:translateY(12px)} 100%{opacity:1;transform:translateY(0)} }
 
-        /* ===== КЛИКЕР ===== */
+        /* ===== Остальные стили (без изменений) ===== */
         .clicker-area { display:flex; flex-direction:column; align-items:center; gap:12px; }
         .score-box { text-align:center; }
         .score-box .score { font-size:3rem; font-weight:800; background:linear-gradient(135deg,#fcd34d,#f59e0b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; letter-spacing:-1px; }
@@ -38,7 +84,6 @@
         .float-text { position:fixed; pointer-events:none; font-weight:800; font-size:2rem; color:#fcd34d; text-shadow:0 0 20px #f59e0b,0 2px 4px #000; animation:floatUp 1s forwards; z-index:999; }
         @keyframes floatUp { 0%{opacity:1;transform:translateY(0) scale(.8)} 100%{opacity:0;transform:translateY(-120px) scale(1.2)} }
 
-        /* ===== УЛУЧШЕНИЯ ===== */
         .upgrade-list { display:flex; flex-direction:column; gap:10px; margin:12px 0 18px; }
         .upgrade-item { background:rgba(255,255,255,0.05); border-radius:14px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border:1px solid rgba(255,255,255,0.06); }
         .upgrade-item .info .name { font-weight:600; font-size:1rem; }
@@ -48,7 +93,6 @@
         .upgrade-item .buy-btn:disabled { opacity:.3; cursor:not-allowed; }
         .upgrade-item .buy-btn:not(:disabled):hover { background:rgba(167,139,250,0.5); transform:scale(1.02); }
 
-        /* ===== ПЕРЕРОЖДЕНИЕ ===== */
         .rebirth-section { background:rgba(255,255,255,0.04); border-radius:14px; padding:16px; border:1px solid rgba(255,255,255,0.06); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
         .rebirth-section .info .title { font-weight:600; font-size:1rem; }
         .rebirth-section .info .detail { font-size:.8rem; color:rgba(255,255,255,0.4); }
@@ -56,7 +100,6 @@
         .rebirth-btn:disabled { opacity:.3; cursor:not-allowed; }
         .rebirth-btn:not(:disabled):hover { background:#8b5cf6; transform:scale(1.03); }
 
-        /* ===== ТОП ===== */
         .top-list { margin-top:12px; }
         .top-item { display:flex; justify-content:space-between; padding:8px 14px; background:rgba(255,255,255,0.04); border-radius:10px; margin-bottom:4px; border-left:3px solid #7c3aed; }
         .top-item .rank { font-weight:700; color:rgba(255,255,255,0.3); width:30px; }
@@ -65,7 +108,6 @@
         .reset-top-btn { background:transparent; border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.3); padding:4px 16px; border-radius:30px; cursor:pointer; font-size:.75rem; margin-top:14px; transition:.2s; }
         .reset-top-btn:hover { background:rgba(255,255,255,0.05); color:#fff; }
 
-        /* ===== ДРУЗЬЯ ===== */
         .friends-search { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
         .friends-search input { flex:1; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:40px; padding:8px 16px; color:#fff; outline:none; font-size:.9rem; min-width:120px; }
         .friends-search input::placeholder { color:rgba(255,255,255,0.3); }
@@ -85,7 +127,6 @@
         .friends-list .friend-entry .fremove { background:transparent; border:none; color:rgba(255,255,255,0.2); cursor:pointer; font-size:.8rem; padding:0 4px; }
         .friends-list .friend-entry .fremove:hover { color:#f87171; }
 
-        /* ===== САД ===== */
         .garden-shop { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
         .seed-card { background:rgba(255,255,255,0.05); border-radius:14px; padding:12px 16px; flex:1; min-width:120px; border:1px solid rgba(255,255,255,0.06); text-align:center; }
         .seed-card .sname { font-weight:600; }
@@ -112,7 +153,104 @@
 
         .garden-stats { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:8px; font-size:.8rem; color:rgba(255,255,255,0.5); }
 
-        /* ===== АДАПТИВ ===== */
+        /* ===== Стили для вкладки "Фон" ===== */
+        .bg-settings {
+            display:flex;
+            flex-direction:column;
+            gap:16px;
+        }
+        .bg-settings .radio-group {
+            display:flex;
+            gap:20px;
+            flex-wrap:wrap;
+        }
+        .bg-settings .radio-group label {
+            display:flex;
+            align-items:center;
+            gap:6px;
+            cursor:pointer;
+            color:rgba(255,255,255,0.8);
+        }
+        .bg-settings .radio-group input[type="radio"] {
+            accent-color:#a78bfa;
+            width:18px;
+            height:18px;
+            cursor:pointer;
+        }
+        .bg-settings .file-input-area {
+            display:flex;
+            align-items:center;
+            gap:12px;
+            flex-wrap:wrap;
+        }
+        .bg-settings .file-input-area input[type="file"] {
+            color:#fff;
+            background:rgba(255,255,255,0.05);
+            border:1px solid rgba(255,255,255,0.15);
+            border-radius:30px;
+            padding:6px 12px;
+            cursor:pointer;
+            font-size:.9rem;
+            width:100%;
+            max-width:280px;
+        }
+        .bg-settings .file-input-area input[type="file"]::file-selector-button {
+            background:rgba(167,139,250,0.25);
+            border:none;
+            padding:4px 16px;
+            border-radius:30px;
+            color:#fff;
+            cursor:pointer;
+            font-weight:600;
+            margin-right:10px;
+        }
+        .bg-settings .file-input-area input[type="file"]::file-selector-button:hover {
+            background:rgba(167,139,250,0.5);
+        }
+        .bg-settings .color-input-area {
+            display:flex;
+            align-items:center;
+            gap:12px;
+            flex-wrap:wrap;
+        }
+        .bg-settings .color-input-area input[type="color"] {
+            width:60px;
+            height:40px;
+            border:none;
+            border-radius:10px;
+            background:transparent;
+            cursor:pointer;
+        }
+        .bg-settings .color-input-area input[type="text"] {
+            background:rgba(255,255,255,0.08);
+            border:1px solid rgba(255,255,255,0.15);
+            border-radius:30px;
+            padding:6px 16px;
+            color:#fff;
+            font-size:.9rem;
+            outline:none;
+            width:120px;
+        }
+        .bg-settings .color-input-area input[type="text"]:focus {
+            border-color:#a78bfa;
+        }
+        .bg-settings .reset-bg-btn {
+            background:rgba(255,255,255,0.05);
+            border:1px solid rgba(255,255,255,0.1);
+            color:rgba(255,255,255,0.5);
+            padding:6px 20px;
+            border-radius:30px;
+            cursor:pointer;
+            font-size:.85rem;
+            transition:.2s;
+            align-self:flex-start;
+        }
+        .bg-settings .reset-bg-btn:hover {
+            background:rgba(255,255,255,0.1);
+            color:#fff;
+        }
+
+        /* ===== Адаптив ===== */
         @media (max-width:500px) {
             .flower-btn { width:150px; height:150px; font-size:3.8rem; }
             .score-box .score { font-size:2.2rem; }
@@ -125,7 +263,7 @@
 </head>
 <body>
 
-    <!-- ЗВЁЗДЫ -->
+    <!-- ЗВЁЗДЫ (будут скрыты, если выбран свой фон) -->
     <div class="stars" id="starsContainer"></div>
 
     <div class="game-wrapper">
@@ -138,13 +276,14 @@
             </div>
         </div>
 
-        <!-- ВКЛАДКИ -->
+        <!-- ВКЛАДКИ (добавлена "Фон") -->
         <div class="tabs">
             <button class="tab-btn active" data-tab="clicker">🌸 Цветок</button>
             <button class="tab-btn" data-tab="upgrades">⬆️ Улучшения</button>
             <button class="tab-btn" data-tab="top">🏆 Топ</button>
             <button class="tab-btn" data-tab="friends">👥 Друзья</button>
             <button class="tab-btn" data-tab="garden">🌱 Сад</button>
+            <button class="tab-btn" data-tab="bg">🎨 Фон</button>
         </div>
 
         <!-- ПАНЕЛЬ КЛИКЕРА -->
@@ -219,6 +358,41 @@
                 <span>⚡ Скорость роста: <span id="gardenGrowthMult">1.00</span>x</span>
             </div>
         </div>
+
+        <!-- ===== НОВАЯ ПАНЕЛЬ: ФОН ===== -->
+        <div class="panel" id="panel-bg">
+            <div class="bg-settings">
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="bgMode" value="stars" checked />
+                        ✨ Космос (звёзды)
+                    </label>
+                    <label>
+                        <input type="radio" name="bgMode" value="image" />
+                        🖼️ Своё изображение
+                    </label>
+                    <label>
+                        <input type="radio" name="bgMode" value="color" />
+                        🎨 Цвет
+                    </label>
+                </div>
+
+                <div class="file-input-area" id="bgImageArea" style="display:none;">
+                    <input type="file" id="bgFileInput" accept="image/*" />
+                    <span style="font-size:.8rem; color:rgba(255,255,255,0.3);">(JPG, PNG, WEBP)</span>
+                </div>
+
+                <div class="color-input-area" id="bgColorArea" style="display:none;">
+                    <input type="color" id="bgColorPicker" value="#1a1040" />
+                    <input type="text" id="bgColorText" placeholder="#1a1040" maxlength="7" />
+                </div>
+
+                <button class="reset-bg-btn" id="resetBgBtn">↺ Сбросить к космосу</button>
+                <div style="font-size:.8rem; color:rgba(255,255,255,0.3); margin-top:6px;">
+                    Настройки сохраняются автоматически.
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -241,7 +415,7 @@
                 }
             })();
 
-            // ===== СОСТОЯНИЕ =====
+            // ===== СОСТОЯНИЕ (ДОБАВЛЕНЫ НАСТРОЙКИ ФОНА) =====
             const DEFAULT_STATE = {
                 score: 0,
                 rebirths: 0,
@@ -256,6 +430,10 @@
                 seeds: { grass: 0, flower: 0, tree: 0 },
                 plots: [],
                 weather: { type: 'normal', startTime: Date.now(), duration: 30 * 1000 },
+                // НАСТРОЙКИ ФОНА
+                bgMode: 'stars',    // 'stars', 'image', 'color'
+                bgImage: '',        // base64
+                bgColor: '#1a1040',
             };
 
             let state = loadState();
@@ -306,6 +484,9 @@
                             seeds: parsed.seeds || { grass: 0, flower: 0, tree: 0 },
                             plots: parsed.plots || [],
                             weather: parsed.weather || { type: 'normal', startTime: Date.now(), duration: 30 * 1000 },
+                            bgMode: parsed.bgMode || 'stars',
+                            bgImage: parsed.bgImage || '',
+                            bgColor: parsed.bgColor || '#1a1040',
                         };
                     } catch (e) { /* сброс */ }
                 }
@@ -314,6 +495,33 @@
 
             function saveState() {
                 localStorage.setItem('cosmicFlower', JSON.stringify(state));
+            }
+
+            // ===== ПРИМЕНЕНИЕ ФОНА =====
+            function applyBackground() {
+                const body = document.body;
+                const starsContainer = document.getElementById('starsContainer');
+                const mode = state.bgMode;
+
+                // Скрываем/показываем звёзды
+                if (mode === 'stars') {
+                    starsContainer.style.display = 'block';
+                    body.style.background = 'linear-gradient(135deg, #0b0e1a 0%, #1a1040 50%, #2d1b69 100%)';
+                    body.style.backgroundSize = 'cover';
+                } else if (mode === 'image' && state.bgImage) {
+                    starsContainer.style.display = 'none';
+                    body.style.background = `url('${state.bgImage}') no-repeat center center fixed`;
+                    body.style.backgroundSize = 'cover';
+                } else if (mode === 'color' && state.bgColor) {
+                    starsContainer.style.display = 'none';
+                    body.style.background = state.bgColor;
+                    body.style.backgroundSize = 'cover';
+                } else {
+                    // fallback
+                    starsContainer.style.display = 'block';
+                    body.style.background = 'linear-gradient(135deg, #0b0e1a 0%, #1a1040 50%, #2d1b69 100%)';
+                    body.style.backgroundSize = 'cover';
+                }
             }
 
             // ===== ВСПОМОГАТЕЛЬНЫЕ =====
@@ -456,6 +664,7 @@
 
             // ===== ОБНОВЛЕНИЕ UI =====
             function updateUI() {
+                // Основные элементы
                 document.getElementById('scoreDisplay').textContent = state.score;
                 document.getElementById('perClickDisplay').textContent = getClickPower() + 1;
                 document.getElementById('rebirthCountDisplay').textContent = state.rebirths;
@@ -470,7 +679,6 @@
                 document.getElementById('flowerEmoji').textContent = stage.emoji;
                 document.getElementById('stageLabel').textContent = stage.label;
 
-                // Ник: обновляем поле только если отличается
                 const nickInput = document.getElementById('nickInput');
                 if (nickInput.value !== state.nick) {
                     nickInput.value = state.nick;
@@ -479,11 +687,17 @@
                 const weather = getCurrentWeather();
                 document.getElementById('weatherIcon').textContent = weather.icon;
 
+                // Рендер вкладок
                 renderUpgrades();
                 renderTop();
                 renderFriends();
                 renderGarden();
+                renderBgSettings();
 
+                // Применяем фон
+                applyBackground();
+
+                // Таймеры
                 if (autoInterval) clearInterval(autoInterval);
                 const autoAmount = getAutoClick();
                 if (autoAmount > 0) {
@@ -565,12 +779,11 @@
                 });
             }
 
-            // ===== ПЕРЕРОЖДЕНИЕ (ИСПРАВЛЕННОЕ) =====
+            // ===== ПЕРЕРОЖДЕНИЕ (исправленное) =====
             function performRebirth() {
                 const cost = getRebirthCost();
                 if (state.score < cost) return;
 
-                // Новая запись
                 const newEntry = {
                     name: state.nick || 'Садовод',
                     score: state.score,
@@ -578,21 +791,16 @@
                     date: new Date().toLocaleDateString()
                 };
 
-                // Ищем запись с таким же ником (регистронезависимо)
                 const index = state.top.findIndex(e => e.name.toLowerCase() === newEntry.name.toLowerCase());
                 if (index !== -1) {
-                    // Обновляем существующую запись
                     state.top[index] = newEntry;
                 } else {
-                    // Добавляем новую
                     state.top.push(newEntry);
                 }
 
-                // Сортируем по убыванию счёта и обрезаем до 10
                 state.top.sort((a, b) => b.score - a.score);
                 if (state.top.length > 10) state.top = state.top.slice(0, 10);
 
-                // Само перерождение
                 state.rebirths += 1;
                 state.rebirthBonus += 1;
                 state.score = 0;
@@ -691,9 +899,8 @@
                 }
             }
 
-            // ===== САД (РЕНДЕР) =====
+            // ===== САД =====
             function renderGarden() {
-                // Магазин
                 const shopContainer = document.getElementById('seedShop');
                 shopContainer.innerHTML = '';
                 for (const [type, info] of Object.entries(PLANT_TYPES)) {
@@ -717,14 +924,12 @@
                     });
                 });
 
-                // Грядки
                 const plotsContainer = document.getElementById('gardenPlots');
                 plotsContainer.innerHTML = '';
                 const totalPlots = 5;
                 const freePlots = totalPlots - state.plots.length;
                 document.getElementById('freePlots').textContent = freePlots;
 
-                // Существующие
                 state.plots.forEach((plot, idx) => {
                     const info = PLANT_TYPES[plot.type];
                     const stageIdx = plot.stage;
@@ -745,7 +950,6 @@
                     plotsContainer.appendChild(div);
                 });
 
-                // Пустые грядки
                 for (let i = 0; i < freePlots; i++) {
                     const div = document.createElement('div');
                     div.className = 'plot';
@@ -764,7 +968,6 @@
                     plotsContainer.appendChild(div);
                 }
 
-                // Обработчики посадки
                 document.querySelectorAll('.plant-btn').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const type = this.dataset.type;
@@ -772,7 +975,6 @@
                     });
                 });
 
-                // Обработчики сбора
                 document.querySelectorAll('.harvest-btn').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const idx = parseInt(this.dataset.index, 10);
@@ -786,15 +988,105 @@
                 document.getElementById('seedCountDisplay').textContent = Object.values(state.seeds).reduce((a,b) => a+b, 0);
             }
 
-            // ===== СОБЫТИЯ =====
-            // НИКНЕЙМ: сохраняем при вводе и при потери фокуса, а также автоматически обновляем старые записи в топе
+            // ===== НАСТРОЙКИ ФОНА =====
+            function renderBgSettings() {
+                // Устанавливаем радиокнопки
+                const radios = document.querySelectorAll('input[name="bgMode"]');
+                radios.forEach(r => {
+                    r.checked = (r.value === state.bgMode);
+                });
+
+                // Показываем/скрываем элементы
+                const imageArea = document.getElementById('bgImageArea');
+                const colorArea = document.getElementById('bgColorArea');
+                if (state.bgMode === 'image') {
+                    imageArea.style.display = 'flex';
+                    colorArea.style.display = 'none';
+                } else if (state.bgMode === 'color') {
+                    imageArea.style.display = 'none';
+                    colorArea.style.display = 'flex';
+                } else {
+                    imageArea.style.display = 'none';
+                    colorArea.style.display = 'none';
+                }
+
+                // Устанавливаем текущий цвет в палитре и поле
+                document.getElementById('bgColorPicker').value = state.bgColor;
+                document.getElementById('bgColorText').value = state.bgColor;
+            }
+
+            // ===== ОБРАБОТЧИКИ ДЛЯ ФОНА =====
+            function setupBgHandlers() {
+                // Радиокнопки
+                document.querySelectorAll('input[name="bgMode"]').forEach(r => {
+                    r.addEventListener('change', function() {
+                        state.bgMode = this.value;
+                        // Если выбрали изображение, но изображения нет — предложим выбрать
+                        if (this.value === 'image' && !state.bgImage) {
+                            document.getElementById('bgFileInput').click();
+                        }
+                        saveState();
+                        updateUI();
+                    });
+                });
+
+                // Загрузка файла
+                document.getElementById('bgFileInput').addEventListener('change', function(e) {
+                    const file = this.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = function(ev) {
+                        state.bgImage = ev.target.result;
+                        state.bgMode = 'image';
+                        // переключаем радиокнопку
+                        document.querySelector('input[name="bgMode"][value="image"]').checked = true;
+                        saveState();
+                        updateUI();
+                    };
+                    reader.readAsDataURL(file);
+                });
+
+                // Цвет: выбор из палитры
+                document.getElementById('bgColorPicker').addEventListener('input', function() {
+                    state.bgColor = this.value;
+                    state.bgMode = 'color';
+                    document.querySelector('input[name="bgMode"][value="color"]').checked = true;
+                    document.getElementById('bgColorText').value = this.value;
+                    saveState();
+                    updateUI();
+                });
+
+                // Цвет: ручной ввод HEX
+                document.getElementById('bgColorText').addEventListener('input', function() {
+                    let val = this.value.trim();
+                    if (/^#[0-9a-f]{6}$/i.test(val)) {
+                        state.bgColor = val;
+                        state.bgMode = 'color';
+                        document.querySelector('input[name="bgMode"][value="color"]').checked = true;
+                        document.getElementById('bgColorPicker').value = val;
+                        saveState();
+                        updateUI();
+                    }
+                });
+
+                // Сброс к космосу
+                document.getElementById('resetBgBtn').addEventListener('click', function() {
+                    state.bgMode = 'stars';
+                    state.bgImage = '';
+                    state.bgColor = '#1a1040';
+                    document.querySelector('input[name="bgMode"][value="stars"]').checked = true;
+                    saveState();
+                    updateUI();
+                });
+            }
+
+            // ===== СОБЫТИЯ (НИК, КЛИК И Т.Д.) =====
             const nickInput = document.getElementById('nickInput');
             nickInput.addEventListener('input', function() {
                 let val = this.value.trim();
                 if (val === '') val = 'Садовод';
                 const oldNick = state.nick;
                 state.nick = val;
-                // Заменяем старый ник на новый во всех записях топа, где ник равен старому или "Plant" или "Садовод"
                 const defaultNames = ['Plant', 'Садовод'];
                 state.top = state.top.map(entry => {
                     if (entry.name === oldNick || defaultNames.includes(entry.name)) {
@@ -805,7 +1097,6 @@
                 saveState();
                 updateUI();
             });
-
             nickInput.addEventListener('blur', function() {
                 let val = this.value.trim();
                 if (val === '') val = 'Садовод';
@@ -822,7 +1113,6 @@
                 updateUI();
             });
 
-            // Остальные события
             document.getElementById('flowerBtn').addEventListener('click', function(e) {
                 const power = getClickPower() + 1;
                 state.score += power;
@@ -857,6 +1147,7 @@
             });
             document.getElementById('friendAddBtn').addEventListener('click', addFriend);
 
+            // Вкладки
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -867,6 +1158,8 @@
                 });
             });
 
+            // ===== ЗАПУСК =====
+            setupBgHandlers();
             updateUI();
             window.addEventListener('beforeunload', saveState);
         })();
