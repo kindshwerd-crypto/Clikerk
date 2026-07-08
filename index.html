@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Космический сад · майнер</title>
   <style>
-    /* ===== ВСЕ СТИЛИ (как в последней версии) ===== */
+    /* ===== ВСЕ СТИЛИ (как в последней версии, без изменений) ===== */
     * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; user-select:none; }
     body { min-height:100vh; background:linear-gradient(135deg,#0b0e1a 0%,#1a1040 50%,#2d1b69 100%); display:flex; justify-content:center; align-items:center; padding:16px; color:#eef2f7; overflow:hidden; position:relative; transition:background .5s; }
     .stars { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; overflow:hidden; }
@@ -120,7 +120,6 @@
 
     .status-msg { font-size:.8rem; color:rgba(255,255,255,0.4); margin-top:4px; }
 
-    /* ===== НОВЫЕ СТИЛИ ДЛЯ МАЙНЕРА ===== */
     .flying-beaver {
       position: fixed;
       font-size: 3rem;
@@ -170,7 +169,6 @@
     <div class="header">
       <input class="nick-input" id="nickInput" type="text" placeholder="Ваш ник..." maxlength="20" />
       <div class="stats-mini">
-        <span id="timerDisplay" style="font-size:0.9rem; color:#fcd34d;">⏳ 4:00:00</span>
         <span class="weather-icon" id="weatherIcon">☀️</span>
         <span>🌱 <span id="rebirthCountDisplay">0</span> пер.</span>
       </div>
@@ -185,7 +183,7 @@
       <button class="tab-btn" data-tab="friends">👥 Друзья</button>
       <button class="tab-btn" data-tab="garden">🌱 Сад</button>
       <button class="tab-btn" data-tab="bg">🎨 Фон</button>
-      <button class="tab-btn" data-tab="miner" id="minerTab" style="display:none;">⛏️ Майнер</button>
+      <button class="tab-btn" data-tab="miner">⛏️ Майнер</button>
     </div>
 
     <!-- ПАНЕЛЬ КЛИКЕРА -->
@@ -347,39 +345,13 @@
         minerCoins: 0,
         minerRunning: false,
         videocards: [],
-        purchasedItems: [],
-        updateTimerEnd: Date.now() + 4 * 60 * 60 * 1000 // 4 часа
+        purchasedItems: []
       };
 
       let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
       let currentNick = '';
       let autoInterval = null, gardenInterval = null, weatherInterval = null;
       let minerInterval = null;
-      let timerInterval = null;
-
-      // ===== ТАЙМЕР (использует state.updateTimerEnd) =====
-      function updateTimer() {
-        const now = Date.now();
-        const diff = state.updateTimerEnd - now;
-        const timerDisplay = document.getElementById('timerDisplay');
-        const minerTab = document.getElementById('minerTab');
-        if (diff <= 0) {
-          timerDisplay.textContent = '✅ Обнова доступна!';
-          minerTab.style.display = 'block';
-          return;
-        }
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        timerDisplay.textContent = `⏳ ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        minerTab.style.display = 'none';
-      }
-
-      function startTimer() {
-        if (timerInterval) clearInterval(timerInterval);
-        updateTimer();
-        timerInterval = setInterval(updateTimer, 1000);
-      }
 
       // ===== КОНСТАНТЫ =====
       const PLANT_TYPES = {
@@ -493,14 +465,10 @@
           const data = await resp.json();
           if (data.success) {
             Object.assign(state, data.user);
-            // Инициализируем поля майнера, если их нет
             if (state.minerCoins === undefined) state.minerCoins = 0;
             if (state.minerRunning === undefined) state.minerRunning = false;
             if (!state.videocards) state.videocards = [];
             if (!state.purchasedItems) state.purchasedItems = [];
-            if (!state.updateTimerEnd) {
-              state.updateTimerEnd = Date.now() + 4 * 60 * 60 * 1000;
-            }
             state.weather.startTime = Date.now();
             currentNick = nick;
             state.nick = nick;
@@ -509,7 +477,6 @@
             localStorage.setItem('lastNick', nick);
             updateUI();
             startTimers();
-            startTimer();
           } else {
             alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
           }
@@ -609,7 +576,6 @@
         document.getElementById('flowerEmoji').textContent = stage.emoji;
         document.getElementById('stageLabel').textContent = stage.label;
 
-        // НИК: обновляем поле только если оно отличается, чтобы не сбросить ввод
         const nickInput = document.getElementById('nickInput');
         if (nickInput.value !== state.nick) {
           nickInput.value = state.nick;
@@ -624,12 +590,7 @@
         renderGarden();
         renderBgSettings();
         applyBackground();
-
-        // Майнер
         updateMinerUI();
-
-        // Таймер
-        updateTimer();
       }
 
       // ===== РЕНДЕР УЛУЧШЕНИЙ =====
@@ -1145,19 +1106,27 @@
         container.querySelectorAll('.buy-btn').forEach(btn => {
           btn.addEventListener('click', async function() {
             const cardId = this.dataset.cardId;
-            const resp = await fetch('/api/buy-videocard', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ nick: state.nick, cardId })
-            });
-            const data = await resp.json();
-            if (data.success) {
-              Object.assign(state, data.user);
-              saveToServer();
-              updateUI();
-              updateMinerUI();
-            } else {
-              alert('Ошибка: ' + data.error);
+            if (!state.nick) {
+              alert('Сначала войдите в аккаунт!');
+              return;
+            }
+            try {
+              const resp = await fetch('/api/buy-videocard', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nick: state.nick, cardId })
+              });
+              const data = await resp.json();
+              if (data.success) {
+                Object.assign(state, data.user);
+                saveToServer();
+                updateUI();
+                updateMinerUI();
+              } else {
+                alert('Ошибка: ' + data.error);
+              }
+            } catch (err) {
+              alert('Ошибка соединения с сервером');
             }
           });
         });
@@ -1192,19 +1161,27 @@
         container.querySelectorAll('.buy-btn').forEach(btn => {
           btn.addEventListener('click', async function() {
             const itemId = this.dataset.itemId;
-            const resp = await fetch('/api/buy-item', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ nick: state.nick, itemId })
-            });
-            const data = await resp.json();
-            if (data.success) {
-              Object.assign(state, data.user);
-              saveToServer();
-              updateUI();
-              updateMinerUI();
-            } else {
-              alert('Ошибка: ' + data.error);
+            if (!state.nick) {
+              alert('Сначала войдите в аккаунт!');
+              return;
+            }
+            try {
+              const resp = await fetch('/api/buy-item', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nick: state.nick, itemId })
+              });
+              const data = await resp.json();
+              if (data.success) {
+                Object.assign(state, data.user);
+                saveToServer();
+                updateUI();
+                updateMinerUI();
+              } else {
+                alert('Ошибка: ' + data.error);
+              }
+            } catch (err) {
+              alert('Ошибка соединения с сервером');
             }
           });
         });
@@ -1241,36 +1218,44 @@
       }
 
       document.getElementById('toggleMinerBtn').addEventListener('click', async function() {
+        if (!state.nick) {
+          alert('Сначала войдите в аккаунт!');
+          return;
+        }
         const newState = !state.minerRunning;
-        const resp = await fetch('/api/toggle-miner', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nick: state.nick, running: newState })
-        });
-        const data = await resp.json();
-        if (data.success) {
-          Object.assign(state, data.user);
-          saveToServer();
-          updateUI();
-          updateMinerUI();
-          if (newState) {
-            if (minerInterval) clearInterval(minerInterval);
-            minerInterval = setInterval(() => {
-              const totalHashrate = (state.videocards || []).reduce((sum, card) => sum + (card.hashrate * card.count), 0);
-              if (totalHashrate > 0) {
-                state.minerCoins = (state.minerCoins || 0) + totalHashrate;
-                saveToServer();
-                updateMinerUI();
+        try {
+          const resp = await fetch('/api/toggle-miner', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nick: state.nick, running: newState })
+          });
+          const data = await resp.json();
+          if (data.success) {
+            Object.assign(state, data.user);
+            saveToServer();
+            updateUI();
+            updateMinerUI();
+            if (newState) {
+              if (minerInterval) clearInterval(minerInterval);
+              minerInterval = setInterval(() => {
+                const totalHashrate = (state.videocards || []).reduce((sum, card) => sum + (card.hashrate * card.count), 0);
+                if (totalHashrate > 0) {
+                  state.minerCoins = (state.minerCoins || 0) + totalHashrate;
+                  saveToServer();
+                  updateMinerUI();
+                }
+              }, 1000);
+            } else {
+              if (minerInterval) {
+                clearInterval(minerInterval);
+                minerInterval = null;
               }
-            }, 1000);
-          } else {
-            if (minerInterval) {
-              clearInterval(minerInterval);
-              minerInterval = null;
             }
+          } else {
+            alert('Ошибка: ' + data.error);
           }
-        } else {
-          alert('Ошибка: ' + data.error);
+        } catch (err) {
+          alert('Ошибка соединения с сервером');
         }
       });
 
@@ -1296,4 +1281,4 @@
     })();
   </script>
 </body>
-          </html>
+  </html>
