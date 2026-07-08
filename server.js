@@ -62,7 +62,14 @@ app.post('/api/login', (req, res) => {
   }
   res.json({ success: true, user: db[nick] });
 });
-
+// В схеме пользователя (если вы используете MongoDB) или в объекте данных (если файл)
+{
+  // ... существующие поля
+  minerCoins: 0,
+  minerRunning: false,
+  videocards: [], // массив объектов { id, name, price, hashrate, count }
+  purchasedItems: [] // массив строк (названия купленных приколюх)
+}
 // POST /save
 app.post('/api/save', (req, res) => {
   const { nick, state } = req.body;
