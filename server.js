@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose');
+const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 
 const app = express();
@@ -10,79 +10,32 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '/')));
 
-// ===== ПОДКЛЮЧЕНИЕ К MONGODB =====
-const MONGODB_URI = process.env.MONGODB_URI;
-if (!MONGODB_URI) {
-  console.error('❌ Ошибка: MONGODB_URI не задана! Добавьте переменную окружения на Render.');
+// ===== ПОДКЛЮЧЕНИЕ К SUPABASE =====
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error('❌ Ошибка: SUPABASE_URL или SUPABASE_KEY не заданы!');
   process.exit(1);
 }
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-mongoose.connect(MONGODB_URI)
-  .then(() => console.log('✅ MongoDB подключена'))
-  .catch(err => console.error('❌ Ошибка подключения к MongoDB:', err));
+// ===== ФУНКЦИИ ДЛЯ РАБОТЫ С БД =====
+async function getUser(nick) {
+  const { data, error } = await supabase
+    .from('users')
+    .select('data')
+    .eq('nick', nick)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? data.data : null;
+}
 
-// ===== СХЕМА ПОЛЬЗОВАТЕЛЯ =====
-const userSchema = new mongoose.Schema({
-  nick: { type: String, unique: true, required: true },
-  score: { type: Number, default: 0 },
-  rebirths: { type: Number, default: 0 },
-  rebirthBonus: { type: Number, default: 0 },
-  upgrades: [
-    {
-      id: String,
-      name: String,
-      baseCost: Number,
-      costMult: Number,
-      level: { type: Number, default: 0 },
-      maxLevel: Number,
-      desc: String
-    }
-  ],
-  top: [
-    {
-      name: String,
-      score: Number,
-      rebirths: Number,
-      date: String
-    }
-  ],
-  friends: [String],
-  seeds: {
-    grass: { type: Number, default: 0 },
-    flower: { type: Number, default: 0 },
-    tree: { type: Number, default: 0 }
-  },
-  plots: [
-    {
-      type: String,
-      stage: { type: Number, default: 0 },
-      progress: { type: Number, default: 0 },
-      plantedAt: { type: Number, default: Date.now }
-    }
-  ],
-  weather: {
-    type: { type: String, default: 'normal' },
-    startTime: { type: Number, default: Date.now },
-    duration: { type: Number, default: 30000 }
-  },
-  bgMode: { type: String, default: 'stars' },
-  bgImage: { type: String, default: '' },
-  bgColor: { type: String, default: '#1a1040' },
-  minerCoins: { type: Number, default: 0 },
-  minerRunning: { type: Boolean, default: false },
-  videocards: [
-    {
-      id: String,
-      name: String,
-      price: Number,
-      hashrate: Number,
-      count: { type: Number, default: 1 }
-    }
-  ],
-  purchasedItems: [String]
-});
-
-const User = mongoose.model('User', userSchema);
+async function setUser(nick, data) {
+  const { error } = await supabase
+    .from('users')
+    .upsert({ nick, data }, { onConflict: 'nick' });
+  if (error) throw error;
+}
 
 // ===== API =====
 
@@ -92,15 +45,19 @@ app.post('/api/login', async (req, res) => {
   if (!nick) return res.status(400).json({ error: 'Ник обязателен' });
 
   try {
-    let user = await User.findOne({ nick });
-    if (!user) {
-      const defaultUpgrades = [
-        { id: 'click_power', name: '💪 Сила роста', baseCost: 10, costMult: 1.5, level: 0, maxLevel: 25, desc: '+1 к силе клика' },
-        { id: 'auto_click', name: '🤖 Фотосинтез', baseCost: 50, costMult: 1.6, level: 0, maxLevel: 20, desc: '+1 очко в секунду' }
-      ];
-      user = new User({
-        nick,
-        upgrades: defaultUpgrades,
+    let userData = await getUser(nick);
+    if (!userData) {
+      // Создаём нового пользователя
+      const defaultState = {
+        score: 0,
+        rebirths: 0,
+        rebirthBonus: 0,
+        upgrades: [
+          { id: 'click_power', name: '💪 Сила роста', baseCost: 10, costMult: 1.5, level: 0, maxLevel: 25, desc: '+1 к силе клика' },
+          { id: 'auto_click', name: '🤖 Фотосинтез', baseCost: 50, costMult: 1.6, level: 0, maxLevel: 20, desc: '+1 очко в секунду' }
+        ],
+        top: [],
+        friends: [],
         seeds: { grass: 0, flower: 0, tree: 0 },
         plots: [],
         weather: { type: 'normal', startTime: Date.now(), duration: 30000 },
@@ -111,11 +68,12 @@ app.post('/api/login', async (req, res) => {
         minerRunning: false,
         videocards: [],
         purchasedItems: []
-      });
-      await user.save();
+      };
+      await setUser(nick, defaultState);
+      userData = defaultState;
       console.log(`🆕 Создан новый профиль: ${nick}`);
     }
-    res.json({ success: true, user });
+    res.json({ success: true, user: userData });
   } catch (err) {
     console.error('Ошибка /login:', err);
     res.status(500).json({ error: 'Ошибка сервера' });
@@ -128,27 +86,7 @@ app.post('/api/save', async (req, res) => {
   if (!nick || !state) return res.status(400).json({ error: 'Нет данных' });
 
   try {
-    const user = await User.findOne({ nick });
-    if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
-
-    user.score = state.score;
-    user.rebirths = state.rebirths;
-    user.rebirthBonus = state.rebirthBonus;
-    user.upgrades = state.upgrades;
-    user.top = state.top;
-    user.friends = state.friends;
-    user.seeds = state.seeds;
-    user.plots = state.plots;
-    user.weather = state.weather;
-    user.bgMode = state.bgMode;
-    user.bgImage = state.bgImage;
-    user.bgColor = state.bgColor;
-    user.minerCoins = state.minerCoins || 0;
-    user.minerRunning = state.minerRunning || false;
-    user.videocards = state.videocards || [];
-    user.purchasedItems = state.purchasedItems || [];
-
-    await user.save();
+    await setUser(nick, state);
     res.json({ success: true });
   } catch (err) {
     console.error('Ошибка /save:', err);
@@ -160,12 +98,16 @@ app.post('/api/save', async (req, res) => {
 app.post('/api/reset-top', async (req, res) => {
   const { nick } = req.body;
   const allowed = ['Panika67', 'Вован7816'];
-  if (!allowed.includes(nick)) {
-    return res.status(403).json({ error: 'Доступ запрещён' });
-  }
+  if (!allowed.includes(nick)) return res.status(403).json({ error: 'Доступ запрещён' });
 
   try {
-    await User.updateMany({}, { $set: { top: [] } });
+    // Получаем всех пользователей, обнуляем их top
+    const { data, error } = await supabase.from('users').select('nick, data');
+    if (error) throw error;
+    for (const row of data) {
+      const newData = { ...row.data, top: [] };
+      await setUser(row.nick, newData);
+    }
     res.json({ success: true });
   } catch (err) {
     console.error('Ошибка /reset-top:', err);
@@ -179,8 +121,8 @@ app.post('/api/buy-videocard', async (req, res) => {
   if (!nick || !cardId) return res.status(400).json({ error: 'Недостаточно данных' });
 
   try {
-    const user = await User.findOne({ nick });
-    if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+    let state = await getUser(nick);
+    if (!state) return res.status(404).json({ error: 'Пользователь не найден' });
 
     const cardsCatalog = [
       { id: 'gtx1050', name: 'GTX 1050', price: 100, hashrate: 1 },
@@ -189,24 +131,18 @@ app.post('/api/buy-videocard', async (req, res) => {
       { id: 'rtx3060', name: 'RTX 3060', price: 1200, hashrate: 12 },
       { id: 'rtx4090', name: 'RTX 4090', price: 5000, hashrate: 50 }
     ];
-
     const card = cardsCatalog.find(c => c.id === cardId);
     if (!card) return res.status(400).json({ error: 'Карта не найдена' });
 
-    if (user.score < card.price) {
-      return res.status(400).json({ error: 'Недостаточно очков' });
-    }
+    if (state.score < card.price) return res.status(400).json({ error: 'Недостаточно очков' });
 
-    let userCard = user.videocards.find(v => v.id === cardId);
-    if (userCard) {
-      userCard.count += 1;
-    } else {
-      user.videocards.push({ id: cardId, name: card.name, price: card.price, hashrate: card.hashrate, count: 1 });
-    }
+    let userCard = state.videocards.find(v => v.id === cardId);
+    if (userCard) userCard.count += 1;
+    else state.videocards.push({ id: cardId, name: card.name, price: card.price, hashrate: card.hashrate, count: 1 });
 
-    user.score -= card.price;
-    await user.save();
-    res.json({ success: true, user });
+    state.score -= card.price;
+    await setUser(nick, state);
+    res.json({ success: true, user: state });
   } catch (err) {
     console.error('Ошибка /buy-videocard:', err);
     res.status(500).json({ error: 'Ошибка сервера' });
@@ -219,8 +155,8 @@ app.post('/api/buy-item', async (req, res) => {
   if (!nick || !itemId) return res.status(400).json({ error: 'Недостаточно данных' });
 
   try {
-    const user = await User.findOne({ nick });
-    if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+    let state = await getUser(nick);
+    if (!state) return res.status(404).json({ error: 'Пользователь не найден' });
 
     const itemsCatalog = [
       { id: 'flying_beaver', name: '🦫 Летающий бобр', price: 100 },
@@ -228,22 +164,16 @@ app.post('/api/buy-item', async (req, res) => {
       { id: 'sparkles', name: '✨ Блестяшки', price: 500 },
       { id: 'ufo', name: '🛸 НЛО', price: 1000 }
     ];
-
     const item = itemsCatalog.find(it => it.id === itemId);
     if (!item) return res.status(400).json({ error: 'Предмет не найден' });
 
-    if (user.minerCoins < item.price) {
-      return res.status(400).json({ error: 'Недостаточно майнер-монет' });
-    }
+    if (state.minerCoins < item.price) return res.status(400).json({ error: 'Недостаточно майнер-монет' });
+    if (state.purchasedItems.includes(itemId)) return res.status(400).json({ error: 'Уже есть' });
 
-    if (user.purchasedItems.includes(itemId)) {
-      return res.status(400).json({ error: 'У вас уже есть этот предмет' });
-    }
-
-    user.purchasedItems.push(itemId);
-    user.minerCoins -= item.price;
-    await user.save();
-    res.json({ success: true, user });
+    state.purchasedItems.push(itemId);
+    state.minerCoins -= item.price;
+    await setUser(nick, state);
+    res.json({ success: true, user: state });
   } catch (err) {
     console.error('Ошибка /buy-item:', err);
     res.status(500).json({ error: 'Ошибка сервера' });
@@ -256,12 +186,12 @@ app.post('/api/toggle-miner', async (req, res) => {
   if (!nick) return res.status(400).json({ error: 'Ник обязателен' });
 
   try {
-    const user = await User.findOne({ nick });
-    if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+    let state = await getUser(nick);
+    if (!state) return res.status(404).json({ error: 'Пользователь не найден' });
 
-    user.minerRunning = running;
-    await user.save();
-    res.json({ success: true, user });
+    state.minerRunning = running;
+    await setUser(nick, state);
+    res.json({ success: true, user: state });
   } catch (err) {
     console.error('Ошибка /toggle-miner:', err);
     res.status(500).json({ error: 'Ошибка сервера' });
