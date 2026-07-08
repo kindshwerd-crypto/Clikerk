@@ -257,7 +257,7 @@
     <script>
         (function() {
             'use strict';
-
+<button class="tab-btn" data-tab="miner" id="minerTab" style="display:none;">⛏️ Майнер</button>
             // ===== ЗВЁЗДЫ =====
             (function createStars() {
                 const c = document.getElementById('starsContainer');
@@ -929,7 +929,27 @@
                     updateUI();
                 });
             }
-
+<div class="panel" id="panel-miner">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <span style="font-weight:600;">⛏️ Майнинг ферма</span>
+    <span>🪙 MinerCoins: <span id="minerCoinsDisplay">0</span></span>
+  </div>
+  <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+    <button id="toggleMinerBtn" class="btn" style="background:#2d4a3a; padding:8px 20px; border-radius:40px; border:none; color:#fff; cursor:pointer;">▶️ Запустить майнер</button>
+    <span style="font-size:0.9rem; color:rgba(255,255,255,0.5);">Хешрейт: <span id="hashrateDisplay">0</span> MC/сек</span>
+  </div>
+  <div style="margin-bottom:16px;">
+    <h3 style="font-size:1rem; margin-bottom:8px;">🖥️ Видеокарты</h3>
+    <div id="videocardShop" class="upgrade-list"></div>
+  </div>
+  <div>
+    <h3 style="font-size:1rem; margin-bottom:8px;">🎁 Приколюхи</h3>
+    <div id="itemsShop" class="upgrade-list"></div>
+  </div>
+  <div style="margin-top:12px; font-size:0.8rem; color:rgba(255,255,255,0.3);">
+    * Приколюхи активируются автоматически после покупки.
+  </div>
+</div>
             // ===== НИКНЕЙМ С ПРОВЕРКОЙ УНИКАЛЬНОСТИ =====
             function isNickTaken(nick, excludeCurrent = true) {
                 // Проверяем, есть ли в топе запись с таким ником (без учёта регистра)
@@ -1004,7 +1024,14 @@
                     updateUI();
                 }
             });
-
+<div class="header">
+  <input class="nick-input" id="nickInput" type="text" placeholder="Ваш ник..." maxlength="20" />
+  <div class="stats-mini">
+    <span id="timerDisplay" style="font-size:0.9rem; color:#fcd34d;">⏳ 4:00:00</span>
+    <span class="weather-icon" id="weatherIcon">☀️</span>
+    <span>🌱 <span id="rebirthCountDisplay">0</span> пер.</span>
+  </div>
+</div>
             // Остальные события
             document.getElementById('flowerBtn').addEventListener('click', function(e) {
                 const power = getClickPower() + 1;
