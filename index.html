@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Космический сад · майнер</title>
   <style>
-    /* ===== БАЗОВЫЕ СТИЛИ (все ваши старые + новые для майнера) ===== */
+    /* ===== ВСЕ СТИЛИ (как в последней версии) ===== */
     * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; user-select:none; }
     body { min-height:100vh; background:linear-gradient(135deg,#0b0e1a 0%,#1a1040 50%,#2d1b69 100%); display:flex; justify-content:center; align-items:center; padding:16px; color:#eef2f7; overflow:hidden; position:relative; transition:background .5s; }
     .stars { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; overflow:hidden; }
@@ -25,7 +25,6 @@
     .panel.active { display:block; }
     @keyframes fadeUp { 0%{opacity:0;transform:translateY(12px)} 100%{opacity:1;transform:translateY(0)} }
 
-    /* ===== ОСНОВНЫЕ ЭЛЕМЕНТЫ (кликер, улучшения, топ, друзья, сад, фон) ===== */
     .clicker-area { display:flex; flex-direction:column; align-items:center; gap:12px; }
     .score-box { text-align:center; }
     .score-box .score { font-size:3rem; font-weight:800; background:linear-gradient(135deg,#fcd34d,#f59e0b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; letter-spacing:-1px; }
@@ -119,6 +118,8 @@
     .bg-settings .reset-bg-btn { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.5); padding:6px 20px; border-radius:30px; cursor:pointer; font-size:.85rem; transition:.2s; align-self:flex-start; }
     .bg-settings .reset-bg-btn:hover { background:rgba(255,255,255,0.1); color:#fff; }
 
+    .status-msg { font-size:.8rem; color:rgba(255,255,255,0.4); margin-top:4px; }
+
     /* ===== НОВЫЕ СТИЛИ ДЛЯ МАЙНЕРА ===== */
     .flying-beaver {
       position: fixed;
@@ -134,20 +135,6 @@
       75% { transform: translate(600px, -150px) scale(1.1); }
       100% { transform: translate(800px, 0) scale(1); opacity: 0.8; }
     }
-    .rainbow-trail {
-      /* эффект на курсор – задаётся через JS */
-    }
-    .sparkles {
-      position: fixed;
-      pointer-events: none;
-      z-index: 9998;
-      animation: sparkle 2s infinite;
-    }
-    @keyframes sparkle {
-      0% { opacity: 0; transform: scale(0); }
-      50% { opacity: 1; transform: scale(1); }
-      100% { opacity: 0; transform: scale(0); }
-    }
     .ufo {
       position: fixed;
       font-size: 2.5rem;
@@ -162,8 +149,6 @@
       75% { transform: translate(900px, -80px); }
       100% { transform: translate(1200px, 0); }
     }
-
-    .status-msg { font-size:.8rem; color:rgba(255,255,255,0.4); margin-top:4px; }
 
     @media (max-width:500px) {
       .flower-btn { width:150px; height:150px; font-size:3.8rem; }
@@ -297,7 +282,7 @@
       </div>
     </div>
 
-    <!-- ===== НОВАЯ ПАНЕЛЬ МАЙНЕРА ===== -->
+    <!-- ПАНЕЛЬ МАЙНЕРА -->
     <div class="panel" id="panel-miner">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
         <span style="font-weight:600;">⛏️ Майнинг ферма</span>
@@ -346,7 +331,7 @@
         score: 0,
         rebirths: 0,
         rebirthBonus: 0,
-        nick: 'Садовод',
+        nick: '',
         upgrades: [
           { id: 'click_power', name: '💪 Сила роста', baseCost: 10, costMult: 1.5, level: 0, maxLevel: 25, desc: '+1 к силе клика' },
           { id: 'auto_click', name: '🤖 Фотосинтез', baseCost: 50, costMult: 1.6, level: 0, maxLevel: 20, desc: '+1 очко в секунду' }
@@ -355,48 +340,48 @@
         friends: [],
         seeds: { grass: 0, flower: 0, tree: 0 },
         plots: [],
-        weather: { type: 'normal', startTime: Date.now(), duration: 30 * 1000 },
+        weather: { type: 'normal', startTime: Date.now(), duration: 30000 },
         bgMode: 'stars',
         bgImage: '',
         bgColor: '#1a1040',
-        // НОВЫЕ ПОЛЯ ДЛЯ МАЙНЕРА
         minerCoins: 0,
         minerRunning: false,
         videocards: [],
-        purchasedItems: []
+        purchasedItems: [],
+        updateTimerEnd: Date.now() + 4 * 60 * 60 * 1000 // 4 часа
       };
 
       let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
       let currentNick = '';
       let autoInterval = null, gardenInterval = null, weatherInterval = null;
       let minerInterval = null;
-
-      // ===== ТАЙМЕР ДО ОБНОВЫ (4 часа) =====
-      const UPDATE_INTERVAL = 4 * 60 * 60 * 1000;
-      let timerEnd = localStorage.getItem('timerEnd') ? parseInt(localStorage.getItem('timerEnd')) : Date.now() + UPDATE_INTERVAL;
       let timerInterval = null;
 
+      // ===== ТАЙМЕР (использует state.updateTimerEnd) =====
       function updateTimer() {
         const now = Date.now();
-        const diff = timerEnd - now;
+        const diff = state.updateTimerEnd - now;
+        const timerDisplay = document.getElementById('timerDisplay');
+        const minerTab = document.getElementById('minerTab');
         if (diff <= 0) {
-          document.getElementById('timerDisplay').textContent = '✅ Обнова доступна!';
-          document.getElementById('minerTab').style.display = 'block';
-          clearInterval(timerInterval);
+          timerDisplay.textContent = '✅ Обнова доступна!';
+          minerTab.style.display = 'block';
           return;
         }
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        document.getElementById('timerDisplay').textContent = `⏳ ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        if (diff > 0) {
-          document.getElementById('minerTab').style.display = 'none';
-        }
+        timerDisplay.textContent = `⏳ ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        minerTab.style.display = 'none';
       }
-      timerInterval = setInterval(updateTimer, 1000);
-      updateTimer();
 
-      // ===== КОНСТАНТЫ (растения, погода, стадии) =====
+      function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        updateTimer();
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      // ===== КОНСТАНТЫ =====
       const PLANT_TYPES = {
         grass: { name: 'Трава', emoji: '🌿', price: 10,
           stages: ['🌱', '🌿', '☘️', '🌾'], stageNames: ['Семя','Росток','Куст','Колоски'],
@@ -438,7 +423,7 @@
         return result;
       }
 
-      // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
+      // ===== ВСПОМОГАТЕЛЬНЫЕ =====
       function getUpgradeCost(upgrade) {
         return Math.floor(upgrade.baseCost * Math.pow(upgrade.costMult, upgrade.level));
       }
@@ -494,6 +479,11 @@
 
       // ===== API ВЫЗОВЫ =====
       async function login(nick) {
+        nick = nick.trim();
+        if (!nick) {
+          document.getElementById('statusMsg').textContent = '⚠️ Введите ник!';
+          return;
+        }
         try {
           const resp = await fetch('/api/login', {
             method: 'POST',
@@ -508,12 +498,18 @@
             if (state.minerRunning === undefined) state.minerRunning = false;
             if (!state.videocards) state.videocards = [];
             if (!state.purchasedItems) state.purchasedItems = [];
+            if (!state.updateTimerEnd) {
+              state.updateTimerEnd = Date.now() + 4 * 60 * 60 * 1000;
+            }
             state.weather.startTime = Date.now();
             currentNick = nick;
+            state.nick = nick;
+            document.getElementById('nickInput').value = nick;
             document.getElementById('statusMsg').textContent = `✅ Загружен профиль ${nick}`;
+            localStorage.setItem('lastNick', nick);
             updateUI();
             startTimers();
-            localStorage.setItem('lastNick', nick);
+            startTimer();
           } else {
             alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
           }
@@ -561,7 +557,7 @@
           changeWeather();
           saveToServer();
           updateUI();
-        }, 30 * 1000);
+        }, 30000);
       }
 
       // ===== ОБНОВЛЕНИЕ РАСТЕНИЙ =====
@@ -592,7 +588,7 @@
         const newType = available[Math.floor(Math.random() * available.length)];
         state.weather.type = newType;
         state.weather.startTime = Date.now();
-        state.weather.duration = 30 * 1000;
+        state.weather.duration = 30000;
         saveToServer();
         updateUI();
       }
@@ -613,6 +609,7 @@
         document.getElementById('flowerEmoji').textContent = stage.emoji;
         document.getElementById('stageLabel').textContent = stage.label;
 
+        // НИК: обновляем поле только если оно отличается, чтобы не сбросить ввод
         const nickInput = document.getElementById('nickInput');
         if (nickInput.value !== state.nick) {
           nickInput.value = state.nick;
@@ -628,10 +625,11 @@
         renderBgSettings();
         applyBackground();
 
-        // Обновляем интерфейс майнера (если панель активна)
+        // Майнер
         updateMinerUI();
 
-        // Таймеры уже запущены отдельно
+        // Таймер
+        updateTimer();
       }
 
       // ===== РЕНДЕР УЛУЧШЕНИЙ =====
@@ -1096,7 +1094,7 @@
       });
 
       // ============================================================
-      // ===== НОВЫЙ КОД: МАЙНЕР, ВИДЕОКАРТЫ, ПРИКОЛЮХИ =====
+      // ===== МАЙНЕР (видеокарты, приколюхи) =====
       // ============================================================
 
       function updateMinerUI() {
@@ -1232,9 +1230,6 @@
         } else {
           document.body.style.cursor = 'default';
         }
-        if (items.includes('sparkles')) {
-          // здесь можно добавить блестяшки, но пока оставим пустым
-        }
         if (items.includes('ufo')) {
           const ufo = document.createElement('div');
           ufo.className = 'ufo';
@@ -1292,8 +1287,10 @@
       }
 
       window.addEventListener('beforeunload', function() {
-        if (currentNick) localStorage.setItem('lastNick', currentNick);
-        if (currentNick) saveToServer();
+        if (currentNick) {
+          localStorage.setItem('lastNick', currentNick);
+          saveToServer();
+        }
       });
 
     })();
